@@ -1,13 +1,249 @@
 /* ==========================================================
    Personal Wealth Center
-   Master Stylesheet
-   Version 1.0
+   Main Style
+   Version: 1.0.0
 ========================================================== */
 
-@import url("variables.css");
-@import url("layout.css");
-@import url("cards.css");
-@import url("forms.css");
-@import url("tables.css");
-@import url("charts.css");
-@import url("mobile.css");
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif;
+  background: #f5f7fb;
+  color: #111827;
+  padding-bottom: 95px;
+}
+
+#appShell {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.appHeader {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+  padding: 22px;
+  border-radius: 26px;
+  margin-bottom: 18px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.18);
+}
+
+.appBadge,
+.badge {
+  display: inline-block;
+  background: rgba(212, 175, 55, 0.16);
+  color: #d4af37;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.appHeader h1 {
+  margin: 12px 0 8px;
+  font-size: 26px;
+}
+
+.appHeader p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.page {
+  display: none;
+  animation: fadeIn 0.25s ease;
+}
+
+.page.active {
+  display: block;
+}
+
+.heroCard {
+  background: radial-gradient(circle at top left, #334155, #0f172a 55%);
+  color: white;
+  padding: 24px;
+  border-radius: 30px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.24);
+  margin-bottom: 16px;
+}
+
+.heroTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.version {
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.heroCard h2 {
+  margin: 18px 0 8px;
+  font-size: 25px;
+}
+
+.heroCard p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.heroValue {
+  margin-top: 22px;
+  font-size: 34px;
+  font-weight: 900;
+  color: #facc15;
+  direction: ltr;
+  text-align: right;
+}
+
+.heroCard small {
+  color: #94a3b8;
+}
+
+.gridCards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.statCard,
+.decisionCard,
+.emptyState {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.statCard span {
+  font-size: 24px;
+}
+
+.statCard small {
+  display: block;
+  color: #6b7280;
+  margin: 8px 0 5px;
+}
+
+.statCard strong {
+  display: block;
+  font-size: 18px;
+  direction: ltr;
+  text-align: right;
+}
+
+.statCard.danger strong {
+  color: #dc2626;
+}
+
+.statCard.gold strong {
+  color: #b45309;
+}
+
+.decisionCard {
+  margin-bottom: 16px;
+  background: #fffbeb;
+  border-color: rgba(212, 175, 55, 0.25);
+}
+
+.decisionCard h3,
+.emptyState h3 {
+  margin: 0 0 8px;
+}
+
+.decisionCard p,
+.emptyState p {
+  margin: 0;
+  line-height: 1.8;
+  color: #374151;
+}
+
+.bottomNav {
+  position: fixed;
+  right: 12px;
+  left: 12px;
+  bottom: 14px;
+  max-width: 760px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 28px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+  z-index: 50;
+}
+
+.navBtn {
+  border: 0;
+  background: transparent;
+  border-radius: 22px;
+  padding: 9px 4px;
+  color: #64748b;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.navBtn span {
+  display: block;
+  font-size: 20px;
+}
+
+.navBtn small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.navBtn.active {
+  background: #0f172a;
+  color: #facc15;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 430px) {
+  #appShell {
+    padding: 14px;
+  }
+
+  .appHeader h1 {
+    font-size: 22px;
+  }
+
+  .heroValue {
+    font-size: 27px;
+  }
+
+  .gridCards {
+    gap: 10px;
+  }
+
+  .statCard {
+    padding: 15px;
+  }
+}
