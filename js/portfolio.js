@@ -1,7 +1,7 @@
 /* ==========================================================
    Personal Wealth Center
    Portfolio Page
-   Version: 1.1.0
+   Version: 1.2.0
 ========================================================== */
 
 "use strict";
@@ -13,92 +13,64 @@
 
   function render() {
     const data = WCStore.get();
-    const portfolio = data.portfolio || [];
+    const list = data.portfolio || [];
 
-    const totalCost = portfolio.reduce((s, x) => s + WCUtils.num(x.totalCost), 0);
-    const totalValue = portfolio.reduce((s, x) => s + WCUtils.num(x.currentValue), 0);
+    const totalCost = list.reduce((s, x) => s + WCUtils.num(x.totalCost), 0);
+    const totalValue = list.reduce((s, x) => s + WCUtils.num(x.currentValue), 0);
     const profit = totalValue - totalCost;
     const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
 
     page.innerHTML = `
-      <section class="pageHero">
-        <span class="badge">Portfolio</span>
-        <h2>محفظتي الاستثمارية</h2>
-        <p>تابع الأسهم، التكلفة، القيمة الحالية، الربح والخسارة، وتوزيع المحفظة.</p>
-      </section>
+      ${WCUI.pageHero(
+        "محفظتي الاستثمارية",
+        "إدارة الأسهم، التكلفة، القيمة الحالية، الربح والخسارة، ونسبة كل شركة من المحفظة.",
+        "Portfolio"
+      )}
 
-      <section class="heroCard">
-        <div class="heroTop">
-          <span class="badge">Portfolio Value</span>
-          <span class="version">${portfolio.length} شركة</span>
-        </div>
-        <h2>${WCUtils.money(totalValue)}</h2>
-        <p>إجمالي قيمة المحفظة الحالية</p>
-        <div class="heroValue ${profit >= 0 ? "positiveText" : "negativeText"}">
-          ${profit >= 0 ? "+" : ""}${WCUtils.money(profit)}
-        </div>
-        <small>العائد: ${WCUtils.percent(profitPct)}</small>
-      </section>
+      ${WCUI.heroCard({
+        tag: "Portfolio Value",
+        title: WCUtils.money(totalValue),
+        desc: "إجمالي قيمة المحفظة الحالية",
+        value: `${profit >= 0 ? "+" : ""}${WCUtils.money(profit)}`,
+        sub: `العائد: ${WCUtils.percent(profitPct)}`
+      })}
 
-      <section class="gridCards">
-        <div class="statCard">
-          <span>💵</span>
-          <small>إجمالي التكلفة</small>
-          <strong>${WCUtils.money(totalCost)}</strong>
-        </div>
+      ${WCUI.statGrid([
+        { icon: "💵", label: "إجمالي التكلفة", value: WCUtils.money(totalCost) },
+        { icon: "📈", label: "القيمة الحالية", value: WCUtils.money(totalValue) },
+        { icon: profit >= 0 ? "🟢" : "🔴", label: "الربح / الخسارة", value: WCUtils.money(profit), type: profit >= 0 ? "success" : "danger" },
+        { icon: "🏢", label: "عدد الشركات", value: list.length }
+      ])}
 
-        <div class="statCard">
-          <span>📈</span>
-          <small>القيمة الحالية</small>
-          <strong>${WCUtils.money(totalValue)}</strong>
-        </div>
-
-        <div class="statCard ${profit >= 0 ? "success" : "danger"}">
-          <span>${profit >= 0 ? "🟢" : "🔴"}</span>
-          <small>الربح / الخسارة</small>
-          <strong>${WCUtils.money(profit)}</strong>
-        </div>
-
-        <div class="statCard gold">
-          <span>📊</span>
-          <small>العائد</small>
-          <strong>${WCUtils.percent(profitPct)}</strong>
-        </div>
-      </section>
-
-      <section class="formCard">
-        <h3>➕ إضافة سهم</h3>
-
-        <div class="formGrid">
-          <input id="pName" placeholder="اسم الشركة مثال: ADIB">
-          <input id="pSymbol" placeholder="الرمز مثال: ADIB">
-          <input id="pSector" placeholder="القطاع مثال: بنوك">
-          <input id="pQty" type="number" placeholder="الكمية">
-          <input id="pAvg" type="number" step="0.001" placeholder="متوسط الشراء">
-          <input id="pPrice" type="number" step="0.001" placeholder="السعر الحالي">
-        </div>
-
-        <button class="mainBtn" onclick="PWC_Portfolio.add()">حفظ السهم</button>
-      </section>
+      ${WCUI.formCard(
+        "➕ إضافة سهم",
+        [
+          WCUI.input("pName", "اسم الشركة مثال: ADIB"),
+          WCUI.input("pSymbol", "الرمز مثال: ADIB"),
+          WCUI.input("pSector", "القطاع مثال: بنوك"),
+          WCUI.input("pQty", "الكمية", "number"),
+          WCUI.input("pAvg", "متوسط الشراء", "number", "0.001"),
+          WCUI.input("pPrice", "السعر الحالي", "number", "0.001")
+        ],
+        "حفظ السهم",
+        "PWC_Portfolio.add()"
+      )}
 
       <section class="tableCard">
         <h3>قائمة الأسهم</h3>
-        ${renderTable(portfolio, totalValue)}
+        ${renderList(list, totalValue)}
       </section>
 
-      <section class="decisionCard">
-        <h3>💡 تحليل المحفظة</h3>
-        <p>${portfolioInsight(portfolio, totalValue)}</p>
-      </section>
+      ${WCUI.decision(portfolioInsight(list, totalValue))}
     `;
   }
 
-  function renderTable(list, totalValue) {
+  function renderList(list, totalValue) {
     if (!list.length) {
       return `
         <div class="emptyState inner">
           <h3>لا توجد أسهم حالياً</h3>
-          <p>أضف أول سهم عشان تبدأ متابعة المحفظة والتحليل.</p>
+          <p>أضف أول سهم عشان يبدأ التحليل.</p>
         </div>
       `;
     }
@@ -141,6 +113,7 @@
     const name = WCUtils.byId("pName").value.trim();
     const symbol = WCUtils.byId("pSymbol").value.trim();
     const sector = WCUtils.byId("pSector").value.trim();
+
     const qty = WCUtils.num(WCUtils.byId("pQty").value);
     const avg = WCUtils.num(WCUtils.byId("pAvg").value);
     const price = WCUtils.num(WCUtils.byId("pPrice").value);
@@ -164,8 +137,6 @@
         createdAt: WCUtils.today()
       });
     });
-
-    render();
   }
 
   function remove(id) {
@@ -174,8 +145,6 @@
     WCStore.update(data => {
       data.portfolio = data.portfolio.filter(x => x.id !== id);
     });
-
-    render();
   }
 
   function portfolioInsight(list, totalValue) {
