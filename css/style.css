@@ -247,3 +247,13 @@ body {
     padding: 15px;
   }
 }
+
+.actionCard.light {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.actionCard.light p {
+  color: #64748b;
+}
