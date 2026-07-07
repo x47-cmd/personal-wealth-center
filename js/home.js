@@ -1,7 +1,7 @@
 /* ==========================================================
    Personal Wealth Center
    Home Page
-   Version: 1.0.0
+   Version: 1.1.0
 ========================================================== */
 
 "use strict";
@@ -11,78 +11,96 @@
   const page = document.getElementById("home");
   if (!page) return;
 
+  function calc(data) {
+    const portfolioValue = data.portfolio.reduce((s, x) => s + WCUtils.num(x.currentValue), 0);
+    const assetsValue = data.assets.reduce((s, x) => s + WCUtils.num(x.value), 0);
+    const liabilitiesValue = data.liabilities.reduce((s, x) => s + WCUtils.num(x.balance), 0);
+    const dividendsValue = data.dividends.reduce((s, x) => s + WCUtils.num(x.amount), 0);
+
+    const totalAssets = portfolioValue + assetsValue;
+    const netWorth = totalAssets - liabilitiesValue;
+    const goal = WCUtils.num(data.settings.targetNetWorth);
+    const progress = goal > 0 ? Math.min((netWorth / goal) * 100, 100) : 0;
+
+    return {
+      portfolioValue,
+      assetsValue,
+      liabilitiesValue,
+      dividendsValue,
+      totalAssets,
+      netWorth,
+      goal,
+      progress
+    };
+  }
+
   function render() {
     const data = WCStore.get();
-
-    const totalAssets = data.assets.reduce((s, a) => s + WCUtils.num(a.value), 0);
-    const totalLiabilities = data.liabilities.reduce((s, l) => s + WCUtils.num(l.balance), 0);
-    const portfolioValue = data.portfolio.reduce((s, p) => s + WCUtils.num(p.value), 0);
-    const netWorth = totalAssets + portfolioValue - totalLiabilities;
+    const c = calc(data);
 
     page.innerHTML = `
-      <section class="heroCard">
-        <div class="heroTop">
-          <span class="badge">Wealth Center</span>
-          <span class="version">V${WC_CONFIG.app.version}</span>
-        </div>
+      ${WCUI.heroCard({
+        tag: "Wealth Overview",
+        title: "لوحة الثروة الشخصية",
+        desc: "صورة شاملة لصافي الثروة، المحفظة، الأصول، الالتزامات، والتقدم نحو الهدف المالي.",
+        value: WCUtils.money(c.netWorth),
+        sub: "صافي الثروة الحالي"
+      })}
 
-        <h2>لوحة الثروة الشخصية</h2>
-        <p>تابع صافي ثروتك، محفظتك، التزاماتك، وتقدمك نحو أهدافك المالية من مكان واحد.</p>
+      ${WCUI.statGrid([
+        {
+          icon: "📈",
+          label: "المحفظة",
+          value: WCUtils.money(c.portfolioValue)
+        },
+        {
+          icon: "🏦",
+          label: "الأصول الأخرى",
+          value: WCUtils.money(c.assetsValue)
+        },
+        {
+          icon: "💳",
+          label: "الالتزامات",
+          value: WCUtils.money(c.liabilitiesValue),
+          type: "danger"
+        },
+        {
+          icon: "💰",
+          label: "التوزيعات",
+          value: WCUtils.money(c.dividendsValue),
+          type: "gold"
+        }
+      ])}
 
-        <div class="heroValue">${WCUtils.money(netWorth)}</div>
-        <small>صافي الثروة الحالي</small>
-      </section>
+      ${WCUI.progress(
+        "التقدم نحو هدف المليون",
+        c.progress,
+        `الهدف الحالي هو ${WCUtils.money(c.goal)}.`
+      )}
 
-      <section class="gridCards">
+      ${WCUI.decision(smartDecision(c))}
 
-        <div class="statCard">
-          <span>📈</span>
-          <small>المحفظة</small>
-          <strong>${WCUtils.money(portfolioValue)}</strong>
-        </div>
-
-        <div class="statCard">
-          <span>🏦</span>
-          <small>الأصول</small>
-          <strong>${WCUtils.money(totalAssets)}</strong>
-        </div>
-
-        <div class="statCard danger">
-          <span>💳</span>
-          <small>الالتزامات</small>
-          <strong>${WCUtils.money(totalLiabilities)}</strong>
-        </div>
-
-        <div class="statCard gold">
-          <span>🎯</span>
-          <small>هدف الثروة</small>
-          <strong>${WCUtils.money(data.settings.targetNetWorth)}</strong>
-        </div>
-
-      </section>
-
-      <section class="decisionCard">
-        <h3>💡 القرار المالي الآن</h3>
-        <p>${smartDecision(data, netWorth, totalLiabilities)}</p>
-      </section>
-
-      <section class="emptyState">
-        <h3>بداية المشروع</h3>
-        <p>الهيكل الأساسي جاهز. الخطوة التالية هي بناء صفحة المحفظة وإضافة أول سهم.</p>
-      </section>
+      ${WCUI.empty(
+        "بداية قوية",
+        "الهيكل الأساسي جاهز. الآن نبني كل صفحة باستخدام نظام موحد عشان يكون المشروع مرتب وسهل التوسع."
+      )}
     `;
   }
 
-  function smartDecision(data, netWorth, debt) {
-    if (debt > netWorth && debt > 0) {
-      return "الأولوية الحالية هي تخفيض الالتزامات قبل زيادة المخاطرة الاستثمارية.";
+  function smartDecision(c) {
+    if (c.liabilitiesValue > c.totalAssets && c.liabilitiesValue > 0) {
+      return "الالتزامات أعلى من الأصول. الأفضل التركيز على تخفيض الدين وزيادة الكاش قبل التوسع الاستثماري.";
     }
 
-    if (netWorth < data.settings.emergencyFundTarget) {
-      return "الأولوية الحالية هي تقوية صندوق الطوارئ قبل التوسع الاستثماري.";
+    if (c.netWorth < 15000) {
+      return "الأولوية الحالية هي تقوية صندوق الطوارئ وبناء قاعدة مالية آمنة.";
     }
 
-    return "وضعك مناسب للمتابعة: استمر في الاستثمار الشهري ومراقبة نمو صافي الثروة.";
+    if (c.progress < 10) {
+      return "أنت في مرحلة التأسيس. الاستمرارية الشهرية أهم من البحث عن عائد سريع.";
+    }
+
+    return "المسار جيد. استمر في الاستثمار الشهري، راقب التوزيع بين الأصول، وحدث بياناتك بشكل منتظم.";
   }
 
   WCEvents.on("dataChanged", render);
