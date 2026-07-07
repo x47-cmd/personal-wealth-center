@@ -257,3 +257,120 @@ body {
 .actionCard.light p {
   color: #64748b;
 }
+
+.formCard,
+.tableCard {
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.formCard h3,
+.tableCard h3 {
+  margin: 0 0 14px;
+  color: #0f172a;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.formGrid input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 13px;
+  font-size: 14px;
+  outline: none;
+}
+
+.formGrid input:focus {
+  border-color: #d4af37;
+  background: #ffffff;
+}
+
+.mainBtn {
+  width: 100%;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 18px;
+  padding: 14px;
+  background: #0f172a;
+  color: #facc15;
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.stockList {
+  display: grid;
+  gap: 10px;
+}
+
+.stockItem {
+  display: grid;
+  grid-template-columns: 1.4fr 1.2fr 0.7fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.stockItem strong,
+.stockItem b {
+  display: block;
+  color: #0f172a;
+}
+
+.stockItem small {
+  display: block;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.positiveText {
+  color: #16a34a !important;
+}
+
+.negativeText {
+  color: #dc2626 !important;
+}
+
+.statCard.success strong {
+  color: #16a34a;
+}
+
+.miniBtn {
+  border: 0;
+  border-radius: 12px;
+  padding: 9px 10px;
+  font-weight: 800;
+}
+
+.dangerBtn {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.emptyState.inner {
+  box-shadow: none;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+}
+
+@media (max-width: 520px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .stockItem {
+    grid-template-columns: 1fr;
+  }
+}
