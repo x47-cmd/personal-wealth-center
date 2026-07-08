@@ -1,8 +1,8 @@
 /* ==========================================================
    Personal Wealth Center
    Settings
-   Version: 1.1.0
-   Editable Financial Settings
+   Version: 1.2.0
+   Practical Settings Center / Stable Save
 ========================================================== */
 
 "use strict";
@@ -12,100 +12,79 @@
   const page = document.getElementById("settings");
   if (!page) return;
 
-  function money(v){
-    return WCUtils.money(Number(v || 0));
+  const defaults = WC_CONFIG.defaults.settings;
+
+  function num(v, fallback){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
   }
 
-  function getSettings(data){
-    if(!data.settings) data.settings = {};
+  function getSettings(){
+    const data = WCStore.get();
+    const s = {
+      ...defaults,
+      ...(data.settings || {})
+    };
 
     return {
-      currency: data.settings.currency || WC_CONFIG.app.currency || "AED",
-      monthlyInvestment: Number(data.settings.monthlyInvestment || 3500),
-      targetNetWorth: Number(data.settings.targetNetWorth || 1000000),
-      emergencyCash: Number(data.settings.emergencyCash || 15000),
-      expectedReturn: Number(data.settings.expectedReturn || 10),
-      monthlySalary: Number(data.settings.monthlySalary || 32000),
-      salaryDay: Number(data.settings.salaryDay || 27)
+      currency: s.currency || "AED",
+      targetNetWorth: num(s.targetNetWorth, 1000000),
+      monthlyInvestment: num(s.monthlyInvestment, 3500),
+      emergencyCash: num(s.emergencyCash, 15000),
+      expectedReturn: num(s.expectedReturn, 10),
+      monthlySalary: num(s.monthlySalary, 32000),
+      salaryDay: num(s.salaryDay, 27)
     };
   }
 
-  function render() {
+  function field(label, id, value, hint){
+    return `
+      <label class="settingField">
+        <span>${label}</span>
+        <input id="${id}" type="number" inputmode="decimal" value="${value}" />
+        ${hint ? `<small>${hint}</small>` : ""}
+      </label>
+    `;
+  }
 
-    const data = WCStore.get();
-    const s = getSettings(data);
+  function render() {
+    const s = getSettings();
 
     page.innerHTML = `
-
       ${WCUI.pageHero(
         "الإعدادات",
-        "إدارة إعداداتك المالية، أهداف الثروة، الاستثمار الشهري، والنسخ الاحتياطي.",
+        "مركز التحكم في أهدافك المالية، الاستثمار الشهري، الراتب، والنسخ الاحتياطي.",
         "Settings"
       )}
 
       ${WCUI.statGrid([
-
-        {
-          icon:"💾",
-          label:"الإصدار",
-          value:WC_CONFIG.app.version
-        },
-
-        {
-          icon:"💵",
-          label:"العملة",
-          value:s.currency
-        },
-
-        {
-          icon:"📈",
-          label:"الاستثمار الشهري",
-          value:money(s.monthlyInvestment)
-        },
-
-        {
-          icon:"🎯",
-          label:"هدف الثروة",
-          value:money(s.targetNetWorth)
-        }
-
+        { icon:"💾", label:"الإصدار", value:WC_CONFIG.app.version },
+        { icon:"💵", label:"العملة", value:s.currency },
+        { icon:"📈", label:"الاستثمار الشهري", value:WCUtils.money(s.monthlyInvestment) },
+        { icon:"🎯", label:"هدف الثروة", value:WCUtils.money(s.targetNetWorth) }
       ])}
 
       <section class="formCard">
-
         <h3>الإعدادات المالية</h3>
 
         <div class="formGrid">
 
-          <select id="setCurrency">
-            <option value="AED" ${s.currency==="AED" ? "selected" : ""}>AED - درهم إماراتي</option>
-            <option value="USD" ${s.currency==="USD" ? "selected" : ""}>USD - دولار</option>
-            <option value="SAR" ${s.currency==="SAR" ? "selected" : ""}>SAR - ريال سعودي</option>
-          </select>
+          <label class="settingField">
+            <span>العملة</span>
+            <select id="setCurrency">
+              <option value="AED" ${s.currency==="AED" ? "selected" : ""}>AED - درهم إماراتي</option>
+              <option value="USD" ${s.currency==="USD" ? "selected" : ""}>USD - دولار</option>
+              <option value="SAR" ${s.currency==="SAR" ? "selected" : ""}>SAR - ريال سعودي</option>
+            </select>
+            <small>العملة الأساسية في كل الصفحات.</small>
+          </label>
 
-          <input id="setTargetNetWorth" type="number" inputmode="decimal"
-            placeholder="هدف الثروة"
-            value="${s.targetNetWorth}" />
-
-          <input id="setMonthlyInvestment" type="number" inputmode="decimal"
-            placeholder="الاستثمار الشهري"
-            value="${s.monthlyInvestment}" />
-
-          <input id="setEmergencyCash" type="number" inputmode="decimal"
-            placeholder="الكاش الاحتياطي"
-            value="${s.emergencyCash}" />
-
-          <input id="setExpectedReturn" type="number" inputmode="decimal"
-            placeholder="العائد السنوي المتوقع %"
-            value="${s.expectedReturn}" />
-
-          <input id="setMonthlySalary" type="number" inputmode="decimal"
-            placeholder="الراتب الشهري"
-            value="${s.monthlySalary}" />
-
-          <input id="setSalaryDay" type="number" inputmode="numeric"
-            placeholder="يوم نزول الراتب"
-            value="${s.salaryDay}" />
+          ${field("هدف الثروة", "setTargetNetWorth", s.targetNetWorth, "مثال: 1000000")}
+          ${field("الاستثمار الشهري", "setMonthlyInvestment", s.monthlyInvestment, "المبلغ الذي تخطط تستثمره شهرياً.")}
+          ${field("الكاش الاحتياطي", "setEmergencyCash", s.emergencyCash, "مبلغ الطوارئ أو الاحتياطي.")}
+          ${field("العائد السنوي المتوقع %", "setExpectedReturn", s.expectedReturn, "مثال: 10")}
+          ${field("الراتب الشهري", "setMonthlySalary", s.monthlySalary, "راتبك الشهري الأساسي.")}
+          ${field("يوم نزول الراتب", "setSalaryDay", s.salaryDay, "مثال: 27")}
 
         </div>
 
@@ -113,10 +92,12 @@
           حفظ الإعدادات المالية
         </button>
 
+        <p id="settingsSaveMsg" style="display:none;margin-top:14px;color:#1f7a2e;font-weight:900;">
+          تم حفظ الإعدادات بنجاح ✅
+        </p>
       </section>
 
       <section class="tableCard">
-
         <h3>إدارة البيانات</h3>
 
         <button class="mainBtn" onclick="PWC_Settings.backup()">
@@ -126,53 +107,40 @@
         <button class="mainBtn secondaryBtn dangerBtn" onclick="PWC_Settings.reset()">
           إعادة ضبط البيانات
         </button>
-
       </section>
-
-      ${WCUI.decision(
-        "أي تعديل في الإعدادات المالية سيتم حفظه وتحديثه في الرئيسية، الثروة، التحليل، وباقي الصفحات المرتبطة."
-      )}
-
     `;
+  }
 
+  function readNumber(id, fallback){
+    const el = document.getElementById(id);
+    return num(el ? el.value : fallback, fallback);
   }
 
   function saveFinancialSettings(){
 
-    const data = WCStore.get();
+    const nextSettings = {
+      currency: document.getElementById("setCurrency").value || "AED",
+      targetNetWorth: readNumber("setTargetNetWorth", 1000000),
+      monthlyInvestment: readNumber("setMonthlyInvestment", 3500),
+      emergencyCash: readNumber("setEmergencyCash", 15000),
+      emergencyFundTarget: readNumber("setEmergencyCash", 15000),
+      expectedReturn: readNumber("setExpectedReturn", 10),
+      monthlySalary: readNumber("setMonthlySalary", 32000),
+      salaryDay: readNumber("setSalaryDay", 27)
+    };
 
-    if(!data.settings) data.settings = {};
+    WCStore.updateSettings(nextSettings);
 
-    data.settings.currency = document.getElementById("setCurrency").value || "AED";
+    render();
 
-    data.settings.targetNetWorth =
-      Number(document.getElementById("setTargetNetWorth").value || 0);
-
-    data.settings.monthlyInvestment =
-      Number(document.getElementById("setMonthlyInvestment").value || 0);
-
-    data.settings.emergencyCash =
-      Number(document.getElementById("setEmergencyCash").value || 0);
-
-    data.settings.expectedReturn =
-      Number(document.getElementById("setExpectedReturn").value || 0);
-
-    data.settings.monthlySalary =
-      Number(document.getElementById("setMonthlySalary").value || 0);
-
-    data.settings.salaryDay =
-      Number(document.getElementById("setSalaryDay").value || 27);
-
-    WCStore.set(data);
-
-    WCEvents.emit("dataChanged");
-
-    alert("تم حفظ الإعدادات المالية بنجاح ✅");
-
+    const msg = document.getElementById("settingsSaveMsg");
+    if(msg){
+      msg.style.display = "block";
+      setTimeout(() => msg.style.display = "none", 2500);
+    }
   }
 
   function backup(){
-
     const data = WCStore.get();
 
     const blob = new Blob(
@@ -181,23 +149,19 @@
     );
 
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
+
     a.href = url;
     a.download = "wealth-backup.json";
     a.click();
 
     URL.revokeObjectURL(url);
-
   }
 
   function reset(){
-
-    if(!confirm("هل أنت متأكد من حذف جميع البيانات؟"))
-      return;
-
+    if(!confirm("هل أنت متأكد من حذف جميع البيانات؟")) return;
     WCStore.reset();
-
+    render();
   }
 
   window.PWC_Settings = {
@@ -206,8 +170,7 @@
     saveFinancialSettings
   };
 
-  WCEvents.on("dataChanged",render);
-
-  document.addEventListener("DOMContentLoaded",render);
+  WCEvents.on("dataChanged", render);
+  document.addEventListener("DOMContentLoaded", render);
 
 })();
