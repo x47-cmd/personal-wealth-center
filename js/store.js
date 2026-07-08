@@ -1,14 +1,25 @@
 /* ==========================================================
    Personal Wealth Center Data Store
-   Version: 1.1.0
+   Version: 1.1.1
+   Stable Save / Full Object Support / Deep Settings Merge
 ========================================================== */
+
 "use strict";
 
 const WCStore = (() => {
+
   const KEY = WC_CONFIG.storage.main;
 
   function clone(obj) {
-    return JSON.parse(JSON.stringify(obj));
+    return JSON.parse(JSON.stringify(obj || {}));
+  }
+
+  function today() {
+    if (window.WCUtils && typeof WCUtils.today === "function") {
+      return WCUtils.today();
+    }
+
+    return new Date().toISOString().slice(0, 10);
   }
 
   function defaultData() {
@@ -16,8 +27,8 @@ const WCStore = (() => {
       meta: {
         app: WC_CONFIG.app.shortName,
         version: WC_CONFIG.app.version,
-        createdAt: WCUtils.today(),
-        updatedAt: WCUtils.today()
+        createdAt: today(),
+        updatedAt: today()
       },
 
       profile: clone(WC_CONFIG.defaults.profile),
@@ -26,9 +37,9 @@ const WCStore = (() => {
       dividends: clone(WC_CONFIG.defaults.dividends),
       assets: clone(WC_CONFIG.defaults.assets),
       liabilities: clone(WC_CONFIG.defaults.liabilities),
-
       expenses: clone(WC_CONFIG.defaults.expenses),
       budgets: clone(WC_CONFIG.defaults.budgets),
+
       spendingSettings: clone(WC_CONFIG.defaults.spendingSettings),
 
       goals: clone(WC_CONFIG.defaults.goals),
@@ -41,13 +52,14 @@ const WCStore = (() => {
   function normalize(data = {}) {
     const base = defaultData();
 
-    return {
+    const normalized = {
       ...base,
       ...data,
 
       meta: {
         ...base.meta,
-        ...(data.meta || {})
+        ...(data.meta || {}),
+        version: WC_CONFIG.app.version
       },
 
       profile: {
@@ -74,6 +86,8 @@ const WCStore = (() => {
       goals: Array.isArray(data.goals) ? data.goals : [],
       snapshots: Array.isArray(data.snapshots) ? data.snapshots : []
     };
+
+    return normalized;
   }
 
   function load() {
@@ -87,6 +101,7 @@ const WCStore = (() => {
       }
 
       return normalize(JSON.parse(raw));
+
     } catch (e) {
       console.warn("WCStore load failed:", e);
       return defaultData();
@@ -95,13 +110,16 @@ const WCStore = (() => {
 
   function save(data, emit = true) {
     const safeData = normalize(data);
-    safeData.meta.updatedAt = WCUtils.today();
+
+    safeData.meta.updatedAt = today();
+    safeData.meta.version = WC_CONFIG.app.version;
 
     localStorage.setItem(KEY, JSON.stringify(safeData));
 
-    if (emit) {
+    if (emit && window.WCEvents && typeof WCEvents.emit === "function") {
       WCEvents.emit("dataChanged", {
-        updatedAt: safeData.meta.updatedAt
+        updatedAt: safeData.meta.updatedAt,
+        version: safeData.meta.version
       });
     }
 
@@ -113,14 +131,59 @@ const WCStore = (() => {
   }
 
   function set(path, value) {
+    /*
+      يدعم الطريقتين:
+
+      1) WCStore.set(dataObject)
+      يحفظ كل البيانات.
+
+      2) WCStore.set("settings", settingsObject)
+      يحفظ قسم معين.
+    */
+
+    if (typeof path === "object" && path !== null && value === undefined) {
+      return save(path);
+    }
+
     const data = load();
-    data[path] = value;
+
+    if (typeof path === "string") {
+      data[path] = value;
+      return save(data);
+    }
+
     return save(data);
   }
 
   function update(mutator) {
     const data = load();
-    mutator(data);
+
+    if (typeof mutator === "function") {
+      mutator(data);
+    }
+
+    return save(data);
+  }
+
+  function updateSettings(nextSettings = {}) {
+    const data = load();
+
+    data.settings = {
+      ...data.settings,
+      ...nextSettings
+    };
+
+    return save(data);
+  }
+
+  function updateSpendingSettings(nextSettings = {}) {
+    const data = load();
+
+    data.spendingSettings = {
+      ...data.spendingSettings,
+      ...nextSettings
+    };
+
     return save(data);
   }
 
@@ -140,11 +203,15 @@ const WCStore = (() => {
     get,
     set,
     update,
+    updateSettings,
+    updateSpendingSettings,
     save,
     reset,
     backup,
-    defaultData
+    defaultData,
+    normalize
   };
+
 })();
 
 window.WCStore = WCStore;
