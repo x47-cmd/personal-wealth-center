@@ -1,7 +1,11 @@
 /* =========================================================
    Personal Wealth Center
-   Portfolio V3 Ultimate
+   Portfolio V3.1 Ultimate
    Store Architecture + Event Bus + Global State + Live Sync
+   Update:
+   - Edit box moved to bottom
+   - Collapsed Accordion
+   - Projection explanation added
    File: js/portfolio.js
 ========================================================= */
 
@@ -13,7 +17,7 @@
 
   const APP_KEY = "pwcDataV1";
   const SETTINGS_KEY = "pwcSettingsV1";
-  const VERSION = "3.0.0";
+  const VERSION = "3.1.0";
 
   const GOALS = [100000, 250000, 500000, 1000000];
 
@@ -28,24 +32,11 @@
   };
 
   const DEFAULT_DATA = {
-    meta: {
-      version: VERSION,
-      updatedAt: null
-    },
+    meta: { version: VERSION, updatedAt: null },
     portfolio: structuredClone(DEFAULT_PORTFOLIO),
-    assets: {
-      cash: 0,
-      investments: 0,
-      realEstate: 0,
-      other: 0
-    },
-    liabilities: {
-      total: 0,
-      items: []
-    },
-    goals: {
-      targetNetWorth: 1000000
-    }
+    assets: { cash: 0, investments: 0, realEstate: 0, other: 0 },
+    liabilities: { total: 0, items: [] },
+    goals: { targetNetWorth: 1000000 }
   };
 
   const DEFAULT_SETTINGS = {
@@ -57,16 +48,9 @@
     monthlySalary: 32000
   };
 
-  /* =========================
-     Helpers
-  ========================= */
-
   function clone(obj) {
-    try {
-      return structuredClone(obj);
-    } catch (e) {
-      return JSON.parse(JSON.stringify(obj));
-    }
+    try { return structuredClone(obj); }
+    catch (e) { return JSON.parse(JSON.stringify(obj)); }
   }
 
   function readJSON(key, fallback) {
@@ -89,12 +73,7 @@
 
   function safeText(v) {
     return String(v || "").replace(/[<>&"]/g, function (c) {
-      return {
-        "<": "&lt;",
-        ">": "&gt;",
-        "&": "&amp;",
-        '"': "&quot;"
-      }[c];
+      return { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c];
     });
   }
 
@@ -104,13 +83,9 @@
 
   function todayISO() {
     const d = new Date();
-    return (
-      d.getFullYear() +
-      "-" +
-      String(d.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(d.getDate()).padStart(2, "0")
-    );
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
   }
 
   function money(v) {
@@ -130,10 +105,6 @@
     return m ? y + " سنة و " + m + " شهر" : y + " سنة";
   }
 
-  /* =========================
-     Event Bus
-  ========================= */
-
   const EventBus = window.PWCEvents || {
     emit(name, detail) {
       window.dispatchEvent(new CustomEvent(name, { detail }));
@@ -144,12 +115,6 @@
   };
 
   window.PWCEvents = EventBus;
-
-  /* =========================
-     Store Adapter
-     يدعم WCStore إذا موجود
-     وإذا غير موجود يستخدم LocalStorage
-  ========================= */
 
   const Store = {
     getSettings() {
@@ -215,10 +180,6 @@
     }
   };
 
-  /* =========================
-     Global Portfolio Engine
-  ========================= */
-
   function calculate() {
     const data = Store.getData();
     const settings = Store.getSettings();
@@ -233,8 +194,7 @@
     const returnPct = capital > 0 ? (profit / capital) * 100 : 0;
 
     const monthlySalary = num(settings.monthlySalary);
-    const investmentRateFromSalary =
-      monthlySalary > 0 ? (monthlyInvestment / monthlySalary) * 100 : 0;
+    const investmentRateFromSalary = monthlySalary > 0 ? (monthlyInvestment / monthlySalary) * 100 : 0;
 
     const totalPurchases = p.purchases.reduce((sum, x) => sum + num(x.amount), 0);
 
@@ -259,8 +219,7 @@
 
     const targetProgress = targetNetWorth > 0 ? Math.min((netWorth / targetNetWorth) * 100, 100) : 0;
 
-    const annualRate = expectedReturn / 100;
-    const monthlyRate = annualRate / 12;
+    const monthlyRate = expectedReturn / 100 / 12;
 
     const projections = GOALS.map((goal) => {
       let months = 0;
@@ -275,7 +234,6 @@
           value = value * (1 + monthlyRate) + monthlyInvestment;
           months++;
         }
-
         if (months >= 1200) months = Infinity;
       }
 
@@ -311,33 +269,15 @@
     }
 
     return {
-      data,
-      settings,
-      portfolio: p,
-      capital,
-      currentValue,
-      monthlyInvestment,
-      expectedReturn,
-      profit,
-      returnPct,
-      totalPurchases,
-      monthlySalary,
-      investmentRateFromSalary,
-      assetsTotal,
-      liabilitiesTotal,
-      netWorth,
-      targetNetWorth,
-      targetProgress,
-      projections,
-      status,
-      tone,
-      message
+      data, settings, portfolio: p,
+      capital, currentValue, monthlyInvestment, expectedReturn,
+      profit, returnPct, totalPurchases,
+      monthlySalary, investmentRateFromSalary,
+      assetsTotal, liabilitiesTotal, netWorth,
+      targetNetWorth, targetProgress, projections,
+      status, tone, message
     };
   }
-
-  /* =========================
-     Mutations
-  ========================= */
 
   function updateMain(values) {
     const data = Store.getData();
@@ -357,6 +297,7 @@
 
   function addPurchase(amount, note) {
     amount = Math.max(0, num(amount));
+
     if (amount <= 0) {
       alert("دخل مبلغ الشراء أولاً");
       return;
@@ -367,6 +308,7 @@
 
     p.capital = num(p.capital) + amount;
     p.currentValue = num(p.currentValue) + amount;
+
     p.purchases.push({
       id: uid(),
       amount,
@@ -398,10 +340,6 @@
     data.portfolio.updatedAt = new Date().toISOString();
     Store.setData(data, "portfolio:purchases_cleared");
   }
-
-  /* =========================
-     Render
-  ========================= */
 
   function render() {
     const c = calculate();
@@ -437,7 +375,6 @@
           margin: 0;
           font-size: 22px;
           font-weight: 950;
-          letter-spacing: -.3px;
         }
 
         .pfSub {
@@ -461,13 +398,16 @@
           margin-top: 18px;
           font-size: 34px;
           font-weight: 950;
-          letter-spacing: -.8px;
+        }
+
+        .pfHeroGrid, .pfGrid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
         }
 
         .pfHeroGrid {
-          display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
           margin-top: 16px;
         }
 
@@ -478,11 +418,16 @@
           padding: 12px;
         }
 
-        .pfHeroMini span {
+        .pfHeroMini span, .pfKpi span {
           display: block;
+          font-size: 12px;
+          color: #667085;
+          margin-bottom: 7px;
+        }
+
+        .pfHeroMini span {
+          color: rgba(255,255,255,.72);
           font-size: 11px;
-          opacity: .72;
-          margin-bottom: 5px;
         }
 
         .pfHeroMini b {
@@ -503,19 +448,6 @@
           margin: 0 0 13px;
           font-size: 16px;
           font-weight: 950;
-        }
-
-        .pfGrid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-        }
-
-        .pfKpi span {
-          display: block;
-          font-size: 12px;
-          color: #667085;
-          margin-bottom: 7px;
         }
 
         .pfKpi b {
@@ -543,17 +475,12 @@
           border-color: #fecdca;
         }
 
-        .pfAnalysis.neutral {
-          background: #f9fafb;
-        }
-
         .pfForm {
           display: grid;
           gap: 10px;
         }
 
-        .pfInput,
-        .pfText {
+        .pfInput, .pfText {
           width: 100%;
           box-sizing: border-box;
           border: 1px solid #d0d5dd;
@@ -569,11 +496,6 @@
           min-height: 82px;
           resize: vertical;
           font-family: inherit;
-        }
-
-        .pfInput:focus,
-        .pfText:focus {
-          border-color: #101828;
         }
 
         .pfBtn {
@@ -639,6 +561,13 @@
           border-radius: 999px;
         }
 
+        .pfSmall {
+          font-size: 12px;
+          color: #667085;
+          margin-top: 6px;
+          line-height: 1.7;
+        }
+
         .pfPurchase {
           display: flex;
           justify-content: space-between;
@@ -652,20 +581,42 @@
           border-bottom: 0;
         }
 
-        .pfSmall {
-          font-size: 12px;
-          color: #667085;
-          margin-top: 4px;
-          line-height: 1.6;
-        }
-
         .pfProfit {
           color: ${c.profit >= 0 ? "#027a48" : "#b42318"};
         }
 
+        .pfAccordion {
+          margin-top: 14px;
+        }
+
+        .pfAccordionHeader {
+          width: 100%;
+          border: 0;
+          background: #fff;
+          border: 1px solid #eaecf0;
+          border-radius: 22px;
+          padding: 17px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-size: 16px;
+          font-weight: 950;
+          color: #101828;
+          cursor: pointer;
+          box-shadow: 0 10px 28px rgba(16,24,40,.06);
+        }
+
+        .pfAccordionBody {
+          display: none;
+          margin-top: 12px;
+        }
+
+        .pfAccordionBody.open {
+          display: block;
+        }
+
         @media(max-width: 620px) {
-          .pfGrid,
-          .pfHeroGrid {
+          .pfGrid, .pfHeroGrid {
             grid-template-columns: 1fr;
           }
 
@@ -679,9 +630,7 @@
         <div class="pfTop">
           <div>
             <h1 class="pfTitle">المحفظة الاستثمارية</h1>
-            <div class="pfSub">
-              Portfolio V3 Ultimate مربوط بالـ Store والـ Events عشان أي تعديل ينعكس على الرئيسية، التحليل، الأصول، الأهداف، والملخصات.
-            </div>
+            <div class="pfSub">تحليل مبسط لرأس المال، قيمة المحفظة، الربح، والتوقعات المستقبلية.</div>
           </div>
           <div class="pfBadge">${c.status}</div>
         </div>
@@ -710,42 +659,16 @@
       </div>
 
       <section class="pfGrid">
-        <div class="pfCard">
-          <h3>تحديث بيانات المحفظة</h3>
-
-          <div class="pfForm">
-            <input id="pfCapital" class="pfInput" type="number" inputmode="decimal" placeholder="رأس المال المودع" value="${c.capital || ""}">
-            <input id="pfCurrent" class="pfInput" type="number" inputmode="decimal" placeholder="قيمة المحفظة الحالية" value="${c.currentValue || ""}">
-            <input id="pfMonthly" class="pfInput" type="number" inputmode="decimal" placeholder="الإضافة الشهرية" value="${c.monthlyInvestment || ""}">
-            <input id="pfReturn" class="pfInput" type="number" inputmode="decimal" placeholder="العائد السنوي المتوقع %" value="${c.expectedReturn || ""}">
-            <textarea id="pfNotes" class="pfText" placeholder="ملاحظات اختيارية">${safeText(c.portfolio.notes || "")}</textarea>
-            <button id="pfSaveMain" class="pfBtn">حفظ وتحديث كل الصفحات</button>
-          </div>
-        </div>
-
-        <div class="pfCard">
-          <h3>إضافة شراء جديد</h3>
-
-          <div class="pfForm">
-            <input id="pfBuyAmount" class="pfInput" type="number" inputmode="decimal" placeholder="كم اشتريت زيادة؟">
-            <input id="pfBuyNote" class="pfInput" type="text" placeholder="ملاحظة اختيارية">
-            <button id="pfAddBuy" class="pfBtn">إضافة إلى رأس المال والمحفظة</button>
-            <button id="pfClearBuys" class="pfBtn secondary">مسح سجل الشراء</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="pfGrid">
         <div class="pfCard pfKpi">
           <span>صافي الثروة الحالي</span>
           <b>${money(c.netWorth)}</b>
-          <div class="pfSmall">يتم احتسابه من الأصول ناقص الالتزامات.</div>
+          <div class="pfSmall">الأصول ناقص الالتزامات.</div>
         </div>
 
         <div class="pfCard pfKpi">
           <span>نسبة الاستثمار من الراتب</span>
           <b>${pct(c.investmentRateFromSalary)}</b>
-          <div class="pfSmall">حسب الإضافة الشهرية والراتب من الإعدادات.</div>
+          <div class="pfSmall">حسب الإضافة الشهرية والراتب.</div>
         </div>
 
         <div class="pfCard pfKpi">
@@ -776,6 +699,12 @@
             </div>
           `).join("")}
         </div>
+
+        <div class="pfSmall">
+          الحسبة تقديرية مبنية على قيمة المحفظة الحالية ${money(c.currentValue)}،
+          إضافة شهرية ${money(c.monthlyInvestment)}،
+          وعائد سنوي متوقع ${pct(c.expectedReturn)}.
+        </div>
       </section>
 
       <section class="pfCard">
@@ -797,16 +726,55 @@
             : `<div class="pfSmall">لا توجد عمليات شراء إضافية بعد.</div>`
         }
       </section>
+
+      <section class="pfCard">
+        <h3>إضافة شراء جديد</h3>
+        <div class="pfForm">
+          <input id="pfBuyAmount" class="pfInput" type="number" inputmode="decimal" placeholder="كم اشتريت زيادة؟">
+          <input id="pfBuyNote" class="pfInput" type="text" placeholder="ملاحظة اختيارية">
+          <button id="pfAddBuy" class="pfBtn">إضافة إلى رأس المال والمحفظة</button>
+        </div>
+      </section>
+
+      <section class="pfAccordion">
+        <button id="pfToggleSettings" class="pfAccordionHeader">
+          <span>⚙️ تعديل بيانات المحفظة</span>
+          <span id="pfArrow">⌄</span>
+        </button>
+
+        <div id="pfSettingsBody" class="pfAccordionBody">
+          <div class="pfCard">
+            <h3>تحديث بيانات المحفظة</h3>
+
+            <div class="pfForm">
+              <input id="pfCapital" class="pfInput" type="number" inputmode="decimal" placeholder="رأس المال المودع" value="${c.capital || ""}">
+              <input id="pfCurrent" class="pfInput" type="number" inputmode="decimal" placeholder="قيمة المحفظة الحالية" value="${c.currentValue || ""}">
+              <input id="pfMonthly" class="pfInput" type="number" inputmode="decimal" placeholder="الإضافة الشهرية" value="${c.monthlyInvestment || ""}">
+              <input id="pfReturn" class="pfInput" type="number" inputmode="decimal" placeholder="العائد السنوي المتوقع %" value="${c.expectedReturn || ""}">
+              <textarea id="pfNotes" class="pfText" placeholder="ملاحظات اختيارية">${safeText(c.portfolio.notes || "")}</textarea>
+              <button id="pfSaveMain" class="pfBtn">حفظ وتحديث كل الصفحات</button>
+              <button id="pfClearBuys" class="pfBtn secondary">مسح سجل الشراء</button>
+            </div>
+          </div>
+        </div>
+      </section>
     `;
 
     bindEvents();
   }
 
-  /* =========================
-     Bind UI
-  ========================= */
-
   function bindEvents() {
+    const toggleBtn = document.getElementById("pfToggleSettings");
+    const body = document.getElementById("pfSettingsBody");
+    const arrow = document.getElementById("pfArrow");
+
+    if (toggleBtn && body) {
+      toggleBtn.onclick = function () {
+        body.classList.toggle("open");
+        if (arrow) arrow.textContent = body.classList.contains("open") ? "⌃" : "⌄";
+      };
+    }
+
     const saveBtn = document.getElementById("pfSaveMain");
     const addBtn = document.getElementById("pfAddBuy");
     const clearBtn = document.getElementById("pfClearBuys");
@@ -820,7 +788,6 @@
           expectedReturn: document.getElementById("pfReturn").value,
           notes: document.getElementById("pfNotes").value
         });
-
         render();
       };
     }
@@ -831,7 +798,6 @@
           document.getElementById("pfBuyAmount").value,
           document.getElementById("pfBuyNote").value
         );
-
         render();
       };
     }
@@ -851,10 +817,6 @@
     });
   }
 
-  /* =========================
-     Public API
-  ========================= */
-
   window.PWCPortfolio = {
     version: VERSION,
     calculate,
@@ -865,10 +827,6 @@
     clearPurchases
   };
 
-  /* =========================
-     Live Sync Listeners
-  ========================= */
-
   EventBus.on("pwc:dataUpdated", function (e) {
     if (e.detail && String(e.detail.reason || "").startsWith("portfolio:")) return;
     render();
@@ -877,7 +835,7 @@
   EventBus.on("pwc:settingsUpdated", render);
   EventBus.on("pwc:assetsUpdated", render);
   EventBus.on("pwc:liabilitiesUpdated", render);
-  EventBus.on("storage", render);
+  window.addEventListener("storage", render);
 
   render();
 })();
