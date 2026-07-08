@@ -1,6 +1,6 @@
 /* =========================================================
-   Personal Wealth Center - Clean Premium Style V4.2 Final
-   iPhone Ready / 6 Bottom Nav / True Fixed Bottom
+   Personal Wealth Center - Premium Style V5 Clean
+   iPhone Ready / 6 Bottom Nav / Settings V1.5 / Top Brand
 ========================================================= */
 
 *{
@@ -20,7 +20,8 @@
   --red:#b42318;
   --border:#e7eaf0;
   --soft:#f8fafc;
-  --shadow:0 18px 45px rgba(15,23,42,.09);
+  --shadow:0 14px 36px rgba(15,23,42,.08);
+  --shadow2:0 8px 24px rgba(15,23,42,.06);
 }
 
 html{
@@ -44,44 +45,55 @@ body{
   width:100%;
   max-width:980px;
   margin:0 auto;
-  padding:22px 16px 110px;
+  padding:18px 16px 110px;
 }
 
-/* Header */
+/* Top Brand */
+
+.topBrand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:4px 0 18px;
+}
+
+.brandIcon{
+  width:48px;
+  height:48px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#f6c945,#d4af37);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  box-shadow:0 10px 24px rgba(212,175,55,.20);
+  flex-shrink:0;
+}
+
+.brandText{
+  flex:1;
+  min-width:0;
+}
+
+.brandText h1{
+  margin:0;
+  color:#0b1020;
+  font-size:22px;
+  font-weight:1000;
+  line-height:1.25;
+}
+
+.brandText p{
+  margin:4px 0 0;
+  color:#667085;
+  font-size:13px;
+  font-weight:800;
+}
+
+/* Old Header Hidden Safety */
 
 .appHeader{
-  background:linear-gradient(135deg,#172236,#070d1d);
-  color:white;
-  border-radius:34px;
-  padding:34px 28px;
-  margin-bottom:28px;
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
-
-.appBadge,
-.heroTag{
-  display:inline-block;
-  background:rgba(246,201,69,.14);
-  color:var(--gold);
-  border:1px solid rgba(246,201,69,.35);
-  border-radius:999px;
-  padding:8px 18px;
-  font-weight:900;
-  margin-bottom:18px;
-}
-
-.appHeader h1{
-  margin:0 0 12px;
-  font-size:28px;
-  line-height:1.35;
-  font-weight:1000;
-}
-.appHeader p{
-  margin:0;
-  color:#cbd5e1;
-  font-size:18px;
-  line-height:1.9;
+  display:none !important;
 }
 
 /* Pages */
@@ -101,10 +113,10 @@ body{
 .heroCard{
   background:linear-gradient(135deg,#1e293b,#020617);
   color:white;
-  border-radius:34px;
-  padding:32px 28px;
-  margin-bottom:24px;
-  box-shadow:var(--shadow);
+  border-radius:30px;
+  padding:28px 24px;
+  margin-bottom:22px;
+  box-shadow:0 18px 45px rgba(15,23,42,.13);
   overflow:hidden;
 }
 
@@ -113,7 +125,20 @@ body{
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  margin-bottom:16px;
+  margin-bottom:14px;
+}
+
+.appBadge,
+.heroTag{
+  display:inline-block;
+  background:rgba(246,201,69,.14);
+  color:var(--gold);
+  border:1px solid rgba(246,201,69,.35);
+  border-radius:999px;
+  padding:7px 15px;
+  font-weight:900;
+  font-size:13px;
+  margin-bottom:14px;
 }
 
 .version{
@@ -122,24 +147,24 @@ body{
 }
 
 .heroCard h2{
-  margin:0 0 14px;
-  font-size:34px;
+  margin:0 0 12px;
+  font-size:29px;
   line-height:1.35;
   font-weight:1000;
 }
 
 .heroCard p{
   color:#cbd5e1;
-  font-size:17px;
+  font-size:15.5px;
   line-height:1.8;
-  margin:0 0 22px;
+  margin:0 0 18px;
 }
 
 .heroValue{
   color:var(--gold);
-  font-size:36px;
+  font-size:34px;
   font-weight:1000;
-  margin-top:12px;
+  margin-top:10px;
   max-width:100%;
   overflow-wrap:anywhere;
   direction:ltr;
@@ -147,12 +172,12 @@ body{
 
 .heroSub{
   color:#94a3b8;
-  font-size:16px;
+  font-size:14px;
   margin-top:6px;
 }
 
 .pageHero{
-  margin:18px 0 24px;
+  margin:12px 0 22px;
 }
 
 .pageHero .heroTag{
@@ -162,54 +187,66 @@ body{
 }
 
 .pageHero h2{
-  font-size:34px;
-  margin:12px 0;
+  font-size:29px;
+  margin:10px 0;
   color:var(--navy);
   font-weight:1000;
   line-height:1.35;
 }
 
 .pageHero p{
-  font-size:18px;
+  font-size:16px;
   color:var(--text);
-  line-height:1.9;
+  line-height:1.8;
   margin:0;
 }
 
-/* Stats */
+/* Premium Cards */
 
 .statGrid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:16px;
+  gap:14px;
   margin-bottom:22px;
 }
 
-.statCard{
+.statCard,
+.progressCard,
+.formCard,
+.tableCard,
+.emptyCard,
+.decisionCard,
+.settingsPanel,
+.settingsMetric{
+  position:relative;
   background:var(--card);
-  border:1px solid var(--border);
-  border-radius:28px;
-  padding:22px;
-  box-shadow:var(--shadow);
+  border:1px solid rgba(15,23,42,.06);
+  border-radius:26px;
+  box-shadow:var(--shadow2);
   overflow:hidden;
+}
+
+.statCard{
+  padding:20px 16px;
   text-align:right;
+  min-height:128px;
 }
 
 .statIcon{
-  font-size:28px;
+  font-size:25px;
   margin-bottom:10px;
 }
 
 .statLabel{
   color:var(--muted);
-  font-size:16px;
-  font-weight:700;
+  font-size:14px;
+  font-weight:800;
   margin-bottom:8px;
 }
 
 .statValue{
   color:var(--navy);
-  font-size:23px;
+  font-size:18px;
   font-weight:1000;
   max-width:100%;
   overflow:hidden;
@@ -236,12 +273,8 @@ body{
 .tableCard,
 .emptyCard,
 .decisionCard{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:28px;
-  padding:24px;
+  padding:22px;
   margin-bottom:22px;
-  box-shadow:var(--shadow);
 }
 
 .progressTop{
@@ -257,8 +290,8 @@ body{
 .tableCard h3,
 .emptyCard h3,
 .decisionCard h3{
-  margin:0 0 18px;
-  font-size:24px;
+  margin:0 0 16px;
+  font-size:22px;
   color:var(--navy);
   font-weight:1000;
   line-height:1.35;
@@ -290,7 +323,7 @@ body{
 .emptyCard p,
 .decisionCard p{
   color:var(--muted);
-  font-size:16px;
+  font-size:15px;
   line-height:1.8;
   margin:0;
 }
@@ -325,6 +358,7 @@ body{
 .formGrid select:focus{
   border-color:var(--gold2);
   background:white;
+  box-shadow:0 0 0 4px rgba(212,175,55,.10);
 }
 
 .mainBtn{
@@ -338,6 +372,13 @@ body{
   font-weight:1000;
   cursor:pointer;
   font-family:inherit;
+  margin-top:10px;
+}
+
+.secondaryBtn{
+  background:#f8fafc;
+  color:var(--navy);
+  border:1px solid var(--border);
 }
 
 .miniBtn{
@@ -443,16 +484,12 @@ body{
   transition:.2s ease;
 }
 
-.bottomNav .navBtn span,
-.bottom-nav .navBtn span,
 .navBtn span{
   font-size:19px;
   line-height:1;
   margin:0 0 4px;
 }
 
-.bottomNav .navBtn small,
-.bottom-nav .navBtn small,
 .navBtn small{
   font-size:8.5px;
   font-weight:900;
@@ -460,181 +497,12 @@ body{
   white-space:nowrap;
 }
 
-.bottomNav .navBtn.active,
-.bottom-nav .navBtn.active,
 .navBtn.active{
   background:#0b1020;
   color:#f6c945;
 }
 
-/* Desktop / Tablet */
-
-@media (min-width:700px){
-  .statGrid{
-    grid-template-columns:repeat(3,1fr);
-  }
-
-  .formGrid{
-    grid-template-columns:repeat(2,1fr);
-  }
-
-  .bottomNav,
-  .bottom-nav{
-    left:50% !important;
-    right:auto !important;
-    width:min(940px, calc(100% - 24px)) !important;
-    transform:translateX(-50%) !important;
-  }
-}
-
-/* iPhone */
-
-@media (max-width:430px){
-  body{
-    padding-bottom:110px !important;
-  }
-
-  #appShell{
-    padding:18px 14px 110px !important;
-  }
-
-  .page{
-    padding-bottom:35px;
-  }
-
-  .appHeader{
-    padding:24px 20px;
-    border-radius:28px;
-    margin-bottom:22px;
-  }
-
-  .appHeader h1{
-    font-size:22px;
-    line-height:1.35;
-  }
-
-  .appHeader p{
-    font-size:15px;
-    line-height:1.8;
-  }
-
-  .appBadge,
-  .heroTag{
-    font-size:13px;
-    padding:7px 15px;
-    margin-bottom:14px;
-  }
-
-  .heroCard{
-    padding:26px 22px;
-    border-radius:28px;
-    margin-bottom:20px;
-  }
-
-  .heroCard h2,
-  .pageHero h2{
-    font-size:27px;
-    line-height:1.35;
-  }
-
-  .heroCard p,
-  .pageHero p{
-    font-size:15.5px;
-    line-height:1.8;
-  }
-
-  .heroValue{
-    font-size:31px;
-  }
-
-  .statGrid{
-    grid-template-columns:repeat(2,1fr);
-    gap:12px;
-  }
-
-  .statCard{
-    padding:18px 14px;
-    border-radius:22px;
-    min-height:135px;
-  }
-
-  .statIcon{
-    font-size:24px;
-  }
-
-  .statLabel{
-    font-size:14px;
-  }
-
-  .statValue{
-    font-size:17px;
-  }
-
-  .progressCard,
-  .formCard,
-  .tableCard,
-  .emptyCard,
-  .decisionCard{
-    padding:20px;
-    border-radius:24px;
-  }
-
-  .progressTop{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:6px;
-  }
-
-  .progressTop h3,
-  .formCard h3,
-  .tableCard h3,
-  .emptyCard h3,
-  .decisionCard h3{
-    font-size:23px;
-  }
-
-  .progressPercent{
-    font-size:24px;
-    line-height:1;
-  }
-
-  .progressCard p{
-    font-size:15px;
-    line-height:1.8;
-  }
-
-  .bottomNav,
-  .bottom-nav{
-    position:fixed !important;
-    left:12px !important;
-    right:12px !important;
-    bottom:calc(-1 * env(safe-area-inset-bottom)) !important;
-width:auto !important;
-height:calc(82px + env(safe-area-inset-bottom)) !important;
-transform:none !important;
-padding:7px 6px env(safe-area-inset-bottom) !important;
-    border-radius:25px 25px 0 0 !important;
-  }
-
-  .navBtn{
-    height:64px;
-    border-radius:19px;
-  }
-
-  .navBtn span{
-    font-size:19px;
-    margin-bottom:4px;
-  }
-
-  .navBtn small{
-    font-size:8.5px;
-  }
-}
-
-/* =========================================================
-   Settings Center Modern UI V1.5 Fixed
-========================================================= */
+/* Settings Center */
 
 .settingsToast{
   position:fixed !important;
@@ -666,12 +534,8 @@ padding:7px 6px env(safe-area-inset-bottom) !important;
 }
 
 .settingsMetric{
-  background:#fff !important;
-  border:1px solid var(--border) !important;
-  border-radius:24px !important;
   padding:18px 14px !important;
-  box-shadow:var(--shadow) !important;
-  overflow:hidden !important;
+  border-radius:24px !important;
   text-align:right !important;
 }
 
@@ -712,13 +576,9 @@ padding:7px 6px env(safe-area-inset-bottom) !important;
 .settingsPanel{
   display:block !important;
   width:100% !important;
-  background:#fff !important;
-  border:1px solid var(--border) !important;
   border-radius:28px !important;
   padding:20px !important;
   margin:0 0 22px !important;
-  box-shadow:var(--shadow) !important;
-  overflow:hidden !important;
 }
 
 .settingsPanelHead{
@@ -850,9 +710,152 @@ padding:7px 6px env(safe-area-inset-bottom) !important;
   cursor:default !important;
 }
 
+/* Desktop / Tablet */
+
+@media (min-width:700px){
+  .statGrid{
+    grid-template-columns:repeat(3,1fr);
+  }
+
+  .formGrid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .bottomNav,
+  .bottom-nav{
+    left:50% !important;
+    right:auto !important;
+    width:min(940px, calc(100% - 24px)) !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+/* iPhone */
+
 @media (max-width:430px){
-  .settingsDashboard{
-    grid-template-columns:repeat(2,1fr) !important;
+  body{
+    padding-bottom:110px !important;
+  }
+
+  #appShell{
+    padding:14px 14px 110px !important;
+  }
+
+  .topBrand{
+    margin:4px 0 16px;
+    gap:11px;
+  }
+
+  .brandIcon{
+    width:44px;
+    height:44px;
+    border-radius:14px;
+    font-size:22px;
+  }
+
+  .brandText h1{
+    font-size:20px;
+    line-height:1.25;
+  }
+
+  .brandText p{
+    font-size:12px;
+  }
+
+  .heroCard{
+    padding:24px 20px;
+    border-radius:26px;
+    margin-bottom:20px;
+  }
+
+  .heroCard h2,
+  .pageHero h2{
+    font-size:25px;
+  }
+
+  .heroCard p,
+  .pageHero p{
+    font-size:15px;
+  }
+
+  .heroValue{
+    font-size:30px;
+  }
+
+  .statGrid{
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+  }
+
+  .statCard{
+    padding:18px 14px;
+    border-radius:22px;
+    min-height:126px;
+  }
+
+  .statIcon{
+    font-size:23px;
+  }
+
+  .statLabel{
+    font-size:13.5px;
+  }
+
+  .statValue{
+    font-size:17px;
+  }
+
+  .progressCard,
+  .formCard,
+  .tableCard,
+  .emptyCard,
+  .decisionCard{
+    padding:20px;
+    border-radius:24px;
+  }
+
+  .progressTop{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
+
+  .progressTop h3,
+  .formCard h3,
+  .tableCard h3,
+  .emptyCard h3,
+  .decisionCard h3{
+    font-size:22px;
+  }
+
+  .progressPercent{
+    font-size:23px;
+    line-height:1;
+  }
+
+  .progressCard p{
+    font-size:15px;
+  }
+
+  .bottomNav,
+  .bottom-nav{
+    left:12px !important;
+    right:12px !important;
+    width:auto !important;
+    transform:none !important;
+  }
+
+  .navBtn{
+    height:64px;
+    border-radius:19px;
+  }
+
+  .navBtn span{
+    font-size:19px;
+  }
+
+  .navBtn small{
+    font-size:8.5px;
   }
 
   .settingsPanel{
@@ -863,356 +866,4 @@ padding:7px 6px env(safe-area-inset-bottom) !important;
   .settingRow{
     grid-template-columns:40px 1fr 16px !important;
   }
-}
-/* =========================================================
-   Settings Center Modern UI V1.4
-========================================================= */
-
-.settingsToast{
-  position:fixed;
-  left:50%;
-  bottom:112px;
-  transform:translateX(-50%) translateY(20px);
-  background:#0b1020;
-  color:#f6c945;
-  padding:12px 22px;
-  border-radius:999px;
-  font-weight:1000;
-  opacity:0;
-  pointer-events:none;
-  z-index:9999999;
-  box-shadow:0 18px 40px rgba(15,23,42,.22);
-  transition:.25s ease;
-}
-
-.settingsToast.show{
-  opacity:1;
-  transform:translateX(-50%) translateY(0);
-}
-
-.settingsDashboard{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:14px;
-  margin-bottom:22px;
-}
-
-.settingsMetric{
-  background:white;
-  border:1px solid var(--border);
-  border-radius:26px;
-  padding:20px 16px;
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
-
-.settingsMetricIcon{
-  font-size:26px;
-  margin-bottom:10px;
-}
-
-.settingsMetric small{
-  display:block;
-  color:var(--muted);
-  font-size:14px;
-  font-weight:900;
-  margin-bottom:8px;
-}
-
-.settingsMetric strong{
-  display:block;
-  color:var(--navy);
-  font-size:22px;
-  font-weight:1000;
-  direction:ltr;
-  text-align:right;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-.settingsMetric span{
-  display:block;
-  color:var(--muted);
-  font-size:12.5px;
-  font-weight:800;
-  margin-top:8px;
-  line-height:1.5;
-}
-
-.settingsPanel{
-  background:white;
-  border:1px solid var(--border);
-  border-radius:30px;
-  padding:22px;
-  margin-bottom:22px;
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
-
-.settingsPanelHead{
-  margin-bottom:18px;
-}
-
-.settingsPanelHead h3{
-  margin:0 0 10px;
-  color:var(--navy);
-  font-size:27px;
-  line-height:1.35;
-  font-weight:1000;
-}
-
-.settingsPanelHead p{
-  margin:0;
-  color:var(--muted);
-  font-size:15px;
-  line-height:1.8;
-}
-
-.settingsList{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.settingRow{
-  width:100%;
-  border:1px solid #edf0f5;
-  background:#f8fafc;
-  border-radius:22px;
-  padding:15px 14px;
-  display:grid;
-  grid-template-columns:auto 1fr auto;
-  align-items:center;
-  gap:12px;
-  cursor:pointer;
-  font-family:inherit;
-  text-align:right;
-}
-
-.settingRowIcon{
-  width:42px;
-  height:42px;
-  border-radius:16px;
-  background:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-  box-shadow:0 8px 20px rgba(15,23,42,.06);
-}
-
-.settingRowText{
-  min-width:0;
-}
-
-.settingRowText strong{
-  display:block;
-  color:var(--navy);
-  font-size:16px;
-  font-weight:1000;
-  margin-bottom:4px;
-}
-
-.settingRowText span{
-  display:block;
-  color:var(--muted);
-  font-size:14px;
-  font-weight:900;
-  direction:ltr;
-  text-align:right;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-.settingRowArrow{
-  color:#94a3b8;
-  font-size:28px;
-  font-weight:900;
-  transform:rotate(180deg);
-}
-
-.emergencyBox{
-  background:#fffbeb;
-  border:1px solid #fde68a;
-  border-radius:24px;
-  padding:20px;
-  margin-bottom:14px;
-}
-
-.emergencyBox > div:first-child{
-  display:flex;
-  align-items:end;
-  justify-content:space-between;
-  margin-bottom:14px;
-}
-
-.emergencyBox strong{
-  color:var(--navy);
-  font-size:38px;
-  font-weight:1000;
-  direction:ltr;
-}
-
-.emergencyBox span{
-  color:var(--muted);
-  font-size:15px;
-  font-weight:900;
-}
-
-.emergencyBox p{
-  color:var(--muted);
-  font-size:14px;
-  line-height:1.7;
-  margin:12px 0 0;
-}
-
-.aboutPanel .settingRow{
-  cursor:default;
-}
-
-@media (max-width:430px){
-  .settingsDashboard{
-    grid-template-columns:repeat(2,1fr);
-    gap:12px;
-  }
-
-  .settingsMetric{
-    padding:18px 14px;
-    border-radius:24px;
-  }
-
-  .settingsMetric strong{
-    font-size:18px;
-  }
-
-  .settingsMetric span{
-    font-size:11.5px;
-  }
-
-  .settingsPanel{
-    padding:20px;
-    border-radius:28px;
-  }
-
-  .settingsPanelHead h3{
-    font-size:25px;
-  }
-
-  .settingRow{
-    border-radius:20px;
-    padding:14px 12px;
-    gap:10px;
-  }
-
-  .settingRowIcon{
-    width:39px;
-    height:39px;
-    border-radius:15px;
-    font-size:20px;
-  }
-
-  .settingRowText strong{
-    font-size:15px;
-  }
-
-  .settingRowText span{
-    font-size:13px;
-  }
-
-  .settingsToast{
-    bottom:104px;
-  }
-}
-
-/* ==========================================
-   Premium Top Brand
-========================================== */
-
-.topBrand{
-    display:flex;
-    align-items:center;
-    gap:16px;
-
-    margin:10px 0 28px;
-}
-
-.brandIcon{
-
-    width:58px;
-    height:58px;
-
-    border-radius:18px;
-
-    background:linear-gradient(135deg,#f6c945,#d4af37);
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    font-size:30px;
-
-    box-shadow:0 12px 30px rgba(212,175,55,.25);
-
-    flex-shrink:0;
-}
-
-.brandText{
-    flex:1;
-}
-
-.brandText h1{
-
-    margin:0;
-
-    color:#0b1020;
-
-    font-size:29px;
-
-    font-weight:1000;
-
-    line-height:1.2;
-}
-
-.brandText p{
-
-    margin-top:6px;
-
-    color:#667085;
-
-    font-size:15px;
-
-    font-weight:700;
-}
-
-@media(max-width:430px){
-
-    .topBrand{
-
-        margin:8px 0 22px;
-
-        gap:14px;
-    }
-
-    .brandIcon{
-
-        width:52px;
-        height:52px;
-
-        border-radius:16px;
-
-        font-size:26px;
-    }
-
-    .brandText h1{
-
-        font-size:24px;
-    }
-
-    .brandText p{
-
-        font-size:13px;
-    }
-
 }
