@@ -1,17 +1,14 @@
 /* =========================================================
-   Personal Wealth Center - Clean Premium Style V2
-   Fixed: 6 Bottom Nav Buttons / No Scroll / iPhone Ready
+   Personal Wealth Center - Clean Premium Style V3
 ========================================================= */
 
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box}
 
 :root{
   --bg:#f3f6fb;
   --card:#ffffff;
   --navy:#0b1020;
-  --navy2:#142033;
+  --navy2:#172236;
   --text:#101828;
   --muted:#667085;
   --gold:#f6c945;
@@ -44,11 +41,9 @@ body{
   padding:22px 16px 140px;
 }
 
-/* Header */
-
 .appHeader{
   background:linear-gradient(135deg,#172236,#070d1d);
-  color:#fff;
+  color:white;
   border-radius:34px;
   padding:34px 28px;
   margin-bottom:28px;
@@ -81,26 +76,29 @@ body{
   line-height:1.9;
 }
 
-/* Pages */
-
-.page{
-  display:none;
-}
-
-.page.active,
-.page.on{
-  display:block;
-}
-
-/* Hero */
+.page{display:none}
+.page.active,.page.on{display:block}
 
 .heroCard{
   background:linear-gradient(135deg,#1e293b,#020617);
-  color:#fff;
+  color:white;
   border-radius:34px;
   padding:32px 28px;
   margin-bottom:24px;
   box-shadow:var(--shadow);
+}
+
+.heroTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.version{
+  color:#cbd5e1;
+  font-weight:900;
 }
 
 .heroCard h2{
@@ -154,8 +152,6 @@ body{
   margin:0;
 }
 
-/* Stats */
-
 .statGrid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -190,16 +186,10 @@ body{
 }
 
 .statCard.gold .statValue,
-.gold{
-  color:var(--gold2);
-}
+.gold{color:var(--gold2)}
 
 .statCard.danger .statValue,
-.danger{
-  color:var(--red);
-}
-
-/* Cards */
+.danger{color:var(--red)}
 
 .progressCard,
 .formCard,
@@ -268,8 +258,6 @@ body{
   border-color:#fde68a;
 }
 
-/* Forms */
-
 .formGrid{
   display:grid;
   grid-template-columns:1fr;
@@ -292,7 +280,7 @@ body{
 .formGrid input:focus,
 .formGrid select:focus{
   border-color:var(--gold2);
-  background:#fff;
+  background:white;
 }
 
 .mainBtn{
@@ -320,11 +308,7 @@ body{
   font-family:inherit;
 }
 
-.dangerBtn{
-  color:var(--red);
-}
-
-/* Lists */
+.dangerBtn{color:var(--red)}
 
 .quickSpendGrid{
   display:grid;
@@ -364,27 +348,21 @@ body{
   font-size:16px;
 }
 
-/* Bottom Navigation */
-
 .bottomNav{
   position:fixed;
   left:14px;
   right:14px;
   bottom:calc(10px + env(safe-area-inset-bottom));
   height:92px;
-
   display:grid;
   grid-template-columns:repeat(6,1fr);
   align-items:center;
   gap:4px;
-
   padding:9px 7px;
-
-  background:#fff;
+  background:white;
   border:1px solid #edf0f5;
   border-radius:28px;
   box-shadow:0 -10px 30px rgba(15,23,42,.10);
-
   overflow:hidden;
   z-index:99999;
 }
@@ -393,24 +371,19 @@ body{
   width:100%;
   min-width:0;
   height:74px;
-
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-
   padding:7px 1px;
   margin:0;
-
   border:0;
   border-radius:22px;
   background:transparent;
-
   color:#667085;
   white-space:nowrap;
   overflow:hidden;
   cursor:pointer;
-
   font-family:inherit;
   transition:.2s ease;
 }
@@ -433,22 +406,13 @@ body{
   color:#f6c945;
 }
 
-/* Responsive */
-
 @media (min-width:700px){
-  .statGrid{
-    grid-template-columns:repeat(3,1fr);
-  }
-
-  .formGrid{
-    grid-template-columns:repeat(2,1fr);
-  }
+  .statGrid{grid-template-columns:repeat(3,1fr)}
+  .formGrid{grid-template-columns:repeat(2,1fr)}
 }
 
 @media (max-width:430px){
-  #appShell{
-    padding:20px 14px 140px;
-  }
+  #appShell{padding:20px 14px 140px}
 
   .appHeader{
     border-radius:30px;
@@ -466,9 +430,7 @@ body{
     font-size:17px;
   }
 
-  .heroValue{
-    font-size:32px;
-  }
+  .heroValue{font-size:32px}
 
   .statGrid{
     grid-template-columns:repeat(2,1fr);
@@ -480,9 +442,7 @@ body{
     padding:20px 16px;
   }
 
-  .statValue{
-    font-size:21px;
-  }
+  .statValue{font-size:21px}
 
   .bottomNav{
     left:12px;
@@ -496,11 +456,6 @@ body{
     border-radius:21px;
   }
 
-  .navBtn span{
-    font-size:20px;
-  }
-
-  .navBtn small{
-    font-size:9px;
-  }
+  .navBtn span{font-size:20px}
+  .navBtn small{font-size:9px}
 }
