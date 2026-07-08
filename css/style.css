@@ -1,6 +1,6 @@
 /* =========================================================
-   Personal Wealth Center - Clean Premium Style V4.1 Final
-   iPhone Ready / 6 Bottom Nav / Fixed Bottom Gap
+   Personal Wealth Center - Clean Premium Style V4.2 Final
+   iPhone Ready / 6 Bottom Nav / True Fixed Bottom
 ========================================================= */
 
 *{
@@ -26,22 +26,25 @@
 html{
   scroll-behavior:smooth;
   -webkit-text-size-adjust:100%;
+  min-height:100%;
 }
 
 body{
   margin:0;
+  min-height:100%;
   background:var(--bg);
   color:var(--text);
   direction:rtl;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
-  padding-bottom:105px;
+  padding-bottom:110px;
+  overflow-x:hidden;
 }
 
 #appShell{
   width:100%;
   max-width:980px;
   margin:0 auto;
-  padding:22px 16px 105px;
+  padding:22px 16px 110px;
 }
 
 /* Header */
@@ -86,7 +89,7 @@ body{
 
 .page{
   display:none;
-  padding-bottom:40px;
+  padding-bottom:35px;
 }
 
 .page.active,
@@ -415,10 +418,12 @@ body{
   box-shadow:0 -10px 30px rgba(15,23,42,.10) !important;
   overflow:hidden !important;
   z-index:999999 !important;
+  transform:none !important;
 }
 
 .bottomNav .navBtn,
-.bottom-nav .navBtn{
+.bottom-nav .navBtn,
+.navBtn{
   width:100%;
   min-width:0;
   height:64px;
@@ -440,14 +445,16 @@ body{
 }
 
 .bottomNav .navBtn span,
-.bottom-nav .navBtn span{
+.bottom-nav .navBtn span,
+.navBtn span{
   font-size:19px;
   line-height:1;
   margin:0 0 4px;
 }
 
 .bottomNav .navBtn small,
-.bottom-nav .navBtn small{
+.bottom-nav .navBtn small,
+.navBtn small{
   font-size:8.5px;
   font-weight:900;
   line-height:1;
@@ -455,7 +462,8 @@ body{
 }
 
 .bottomNav .navBtn.active,
-.bottom-nav .navBtn.active{
+.bottom-nav .navBtn.active,
+.navBtn.active{
   background:#0b1020;
   color:#f6c945;
 }
@@ -471,11 +479,12 @@ body{
     grid-template-columns:repeat(2,1fr);
   }
 
-  .bottomNav{
-    left:50%;
-    right:auto;
-    transform:translateX(-50%);
-    width:min(940px, calc(100% - 24px));
+  .bottomNav,
+  .bottom-nav{
+    left:50% !important;
+    right:auto !important;
+    width:min(940px, calc(100% - 24px)) !important;
+    transform:translateX(-50%) !important;
   }
 }
 
@@ -483,11 +492,11 @@ body{
 
 @media (max-width:430px){
   body{
-    padding-bottom:105px;
+    padding-bottom:110px !important;
   }
 
   #appShell{
-    padding:18px 14px 105px;
+    padding:18px 14px 110px !important;
   }
 
   .page{
@@ -596,13 +605,17 @@ body{
     line-height:1.8;
   }
 
-  .bottomNav{
-    left:12px;
-    right:12px;
-    bottom:0;
-    height:92px;
-    padding:7px 6px calc(7px + env(safe-area-inset-bottom));
-    border-radius:25px 25px 0 0;
+  .bottomNav,
+  .bottom-nav{
+    position:fixed !important;
+    left:12px !important;
+    right:12px !important;
+    bottom:0 !important;
+    width:auto !important;
+    height:92px !important;
+    transform:none !important;
+    padding:7px 6px calc(7px + env(safe-area-inset-bottom)) !important;
+    border-radius:25px 25px 0 0 !important;
   }
 
   .navBtn{
