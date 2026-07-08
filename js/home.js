@@ -1,25 +1,38 @@
 /* ==========================================================
-   Personal Wealth Center
-   Home Page
-   Version: 1.1.0
+   Personal Wealth Center Home Page
+   Version: 1.2.0
+   Spending Connected
 ========================================================== */
-
 "use strict";
 
 (function () {
-
   const page = document.getElementById("home");
   if (!page) return;
 
-  function calc(data) {
-    const portfolioValue = data.portfolio.reduce((s, x) => s + WCUtils.num(x.currentValue), 0);
-    const assetsValue = data.assets.reduce((s, x) => s + WCUtils.num(x.value), 0);
-    const liabilitiesValue = data.liabilities.reduce((s, x) => s + WCUtils.num(x.balance), 0);
-    const dividendsValue = data.dividends.reduce((s, x) => s + WCUtils.num(x.amount), 0);
+  function monthKey(date = WCUtils.today()) {
+    return String(date).slice(0, 7);
+  }
 
-    const totalAssets = portfolioValue + assetsValue;
+  function calc(data) {
+    const portfolioValue = (data.portfolio || []).reduce((s, x) => s + WCUtils.num(x.currentValue), 0);
+    const assetsValue = (data.assets || []).reduce((s, x) => s + WCUtils.num(x.value), 0);
+    const liabilitiesValue = (data.liabilities || []).reduce((s, x) => s + WCUtils.num(x.balance), 0);
+    const dividendsValue = (data.dividends || []).reduce((s, x) => s + WCUtils.num(x.amount), 0);
+
+    const currentMonth = monthKey();
+    const monthlyBudget = WCUtils.num(data.spendingSettings?.monthlyBudget, 7000);
+
+    const monthExpenses = (data.expenses || []).filter(x => monthKey(x.date) === currentMonth);
+    const monthlySpent = monthExpenses.reduce((s, x) => s + WCUtils.num(x.amount), 0);
+    const spendingRemaining = monthlyBudget - monthlySpent;
+    const spendingPercent = monthlyBudget > 0 ? Math.min((monthlySpent / monthlyBudget) * 100, 999) : 0;
+
+    const cashAfterSpending = Math.max(monthlyBudget - monthlySpent, 0);
+
+    const totalAssets = portfolioValue + assetsValue + cashAfterSpending;
     const netWorth = totalAssets - liabilitiesValue;
-    const goal = WCUtils.num(data.settings.targetNetWorth);
+
+    const goal = WCUtils.num(data.settings?.targetNetWorth, 1000000);
     const progress = goal > 0 ? Math.min((netWorth / goal) * 100, 100) : 0;
 
     return {
@@ -27,6 +40,11 @@
       assetsValue,
       liabilitiesValue,
       dividendsValue,
+      monthlyBudget,
+      monthlySpent,
+      spendingRemaining,
+      spendingPercent,
+      cashAfterSpending,
       totalAssets,
       netWorth,
       goal,
@@ -42,34 +60,18 @@
       ${WCUI.heroCard({
         tag: "Wealth Overview",
         title: "لوحة الثروة الشخصية",
-        desc: "صورة شاملة لصافي الثروة، المحفظة، الأصول، الالتزامات، والتقدم نحو الهدف المالي.",
+        desc: "صورة شاملة لصافي الثروة، المحفظة، الأصول، الالتزامات، المصروفات، والتقدم نحو الهدف المالي.",
         value: WCUtils.money(c.netWorth),
         sub: "صافي الثروة الحالي"
       })}
 
       ${WCUI.statGrid([
-        {
-          icon: "📈",
-          label: "المحفظة",
-          value: WCUtils.money(c.portfolioValue)
-        },
-        {
-          icon: "🏦",
-          label: "الأصول الأخرى",
-          value: WCUtils.money(c.assetsValue)
-        },
-        {
-          icon: "💳",
-          label: "الالتزامات",
-          value: WCUtils.money(c.liabilitiesValue),
-          type: "danger"
-        },
-        {
-          icon: "💰",
-          label: "التوزيعات",
-          value: WCUtils.money(c.dividendsValue),
-          type: "gold"
-        }
+        { icon: "📈", label: "المحفظة", value: WCUtils.money(c.portfolioValue) },
+        { icon: "💎", label: "الأصول الأخرى", value: WCUtils.money(c.assetsValue) },
+        { icon: "💳", label: "مصروف الشهر", value: WCUtils.money(c.monthlySpent), type: c.monthlySpent > c.monthlyBudget ? "danger" : "" },
+        { icon: "🏦", label: "الكاش المتبقي", value: WCUtils.money(c.cashAfterSpending), type: "gold" },
+        { icon: "⚠️", label: "الالتزامات", value: WCUtils.money(c.liabilitiesValue), type: "danger" },
+        { icon: "💸", label: "التوزيعات", value: WCUtils.money(c.dividendsValue), type: "gold" }
       ])}
 
       ${WCUI.progress(
@@ -78,16 +80,34 @@
         `الهدف الحالي هو ${WCUtils.money(c.goal)}.`
       )}
 
+      ${WCUI.progress(
+        "استهلاك المصروف الشهري",
+        c.spendingPercent,
+        `صرفت ${WCUtils.money(c.monthlySpent)} من ميزانية ${WCUtils.money(c.monthlyBudget)}. المتبقي ${WCUtils.money(c.spendingRemaining)}.`
+      )}
+
       ${WCUI.decision(smartDecision(c))}
 
       ${WCUI.empty(
-        "بداية قوية",
-        "الهيكل الأساسي جاهز. الآن نبني كل صفحة باستخدام نظام موحد عشان يكون المشروع مرتب وسهل التوسع."
+        "الربط المركزي شغال",
+        "أي مصروف تضيفه من صفحة المصروفات يظهر هنا تلقائياً ويأثر على الكاش وصافي الثروة."
       )}
     `;
   }
 
   function smartDecision(c) {
+    if (c.monthlySpent > c.monthlyBudget) {
+      return `يا يوسف، صرفك هذا الشهر تجاوز الميزانية بـ ${WCUtils.money(c.monthlySpent - c.monthlyBudget)}. الأفضل توقف المصاريف الكمالية مؤقتاً.`;
+    }
+
+    if (c.spendingPercent >= 90) {
+      return "وصلت إلى أكثر من 90% من مصروف الشهر. من الآن ركز فقط على الضروريات.";
+    }
+
+    if (c.spendingPercent >= 75) {
+      return "صرفك وصل فوق 75% من الميزانية. راقب المطاعم والمشتريات والبترول قبل نهاية الشهر.";
+    }
+
     if (c.liabilitiesValue > c.totalAssets && c.liabilitiesValue > 0) {
       return "الالتزامات أعلى من الأصول. الأفضل التركيز على تخفيض الدين وزيادة الكاش قبل التوسع الاستثماري.";
     }
@@ -100,10 +120,9 @@
       return "أنت في مرحلة التأسيس. الاستمرارية الشهرية أهم من البحث عن عائد سريع.";
     }
 
-    return "المسار جيد. استمر في الاستثمار الشهري، راقب التوزيع بين الأصول، وحدث بياناتك بشكل منتظم.";
+    return "المسار جيد. استمر في الاستثمار الشهري، راقب المصروف، وحدث بياناتك بشكل منتظم.";
   }
 
   WCEvents.on("dataChanged", render);
   document.addEventListener("DOMContentLoaded", render);
-
 })();
