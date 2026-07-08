@@ -1,17 +1,14 @@
 /* ==========================================================
-   Personal Wealth Center
-   Global Config
-   Version: 1.0.0
+   Personal Wealth Center Global Config
+   Version: 1.1.0
 ========================================================== */
-
 "use strict";
 
 const WC_CONFIG = {
-
   app: {
     name: "مركز إدارة الثروة الشخصية",
     shortName: "Wealth Center",
-    version: "1.0.0",
+    version: "1.1.0",
     currency: "AED",
     locale: "ar-AE",
     direction: "rtl"
@@ -29,23 +26,11 @@ const WC_CONFIG = {
     dividends: "التوزيعات",
     assets: "الأصول",
     liabilities: "الالتزامات",
+    spending: "المصروفات",
     goals: "الأهداف",
     reports: "التحليل",
     quick: "إدخال سريع",
     settings: "الإعدادات"
-  },
-
-  theme: {
-    primary: "#0f172a",
-    secondary: "#1e293b",
-    gold: "#d4af37",
-    green: "#16a34a",
-    red: "#dc2626",
-    blue: "#2563eb",
-    bg: "#f5f7fb",
-    card: "#ffffff",
-    text: "#111827",
-    muted: "#6b7280"
   },
 
   defaults: {
@@ -58,9 +43,19 @@ const WC_CONFIG = {
     dividends: [],
     assets: [],
     liabilities: [],
-    goals: [],
+    expenses: [],
+    budgets: [],
 
+    goals: [],
     snapshots: [],
+
+    spendingSettings: {
+      monthlyBudget: 7000,
+      rollover: false,
+      alert50: true,
+      alert75: true,
+      alert90: true
+    },
 
     settings: {
       monthlyInvestment: 3500,
@@ -69,7 +64,6 @@ const WC_CONFIG = {
       emergencyFundTarget: 15000
     }
   }
-
 };
 
 window.WC_CONFIG = WC_CONFIG;
