@@ -1,175 +1,216 @@
 /* ==========================================================
-   Personal Wealth Center
-   Portfolio Page
-   Version: 1.2.0
+   Personal Wealth Center Portfolio Center
+   الأسهم + التوزيعات + الأداء
 ========================================================== */
-
 "use strict";
 
 (function () {
-
   const page = document.getElementById("portfolio");
   if (!page) return;
 
+  function calc(data) {
+    const stocks = data.portfolio || [];
+    const dividends = data.dividends || [];
+
+    const cost = stocks.reduce((s, x) => s + WCUtils.num(x.quantity) * WCUtils.num(x.avgPrice), 0);
+    const value = stocks.reduce((s, x) => s + WCUtils.num(x.quantity) * WCUtils.num(x.currentPrice || x.avgPrice), 0);
+    const pnl = value - cost;
+    const returnPct = cost > 0 ? (pnl / cost) * 100 : 0;
+    const divTotal = dividends.reduce((s, x) => s + WCUtils.num(x.amount), 0);
+
+    return { stocks, dividends, cost, value, pnl, returnPct, divTotal };
+  }
+
   function render() {
     const data = WCStore.get();
-    const list = data.portfolio || [];
-
-    const totalCost = list.reduce((s, x) => s + WCUtils.num(x.totalCost), 0);
-    const totalValue = list.reduce((s, x) => s + WCUtils.num(x.currentValue), 0);
-    const profit = totalValue - totalCost;
-    const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+    const c = calc(data);
 
     page.innerHTML = `
       ${WCUI.pageHero(
-        "محفظتي الاستثمارية",
-        "إدارة الأسهم، التكلفة، القيمة الحالية، الربح والخسارة، ونسبة كل شركة من المحفظة.",
+        "المحفظة",
+        "إدارة الأسهم، التكلفة، القيمة الحالية، التوزيعات، الربح والخسارة، ونسبة كل شركة من المحفظة.",
         "Portfolio"
       )}
 
       ${WCUI.heroCard({
         tag: "Portfolio Value",
-        title: WCUtils.money(totalValue),
+        title: WCUtils.money(c.value),
         desc: "إجمالي قيمة المحفظة الحالية",
-        value: `${profit >= 0 ? "+" : ""}${WCUtils.money(profit)}`,
-        sub: `العائد: ${WCUtils.percent(profitPct)}`
+        value: `${WCUtils.money(c.pnl)} ${c.pnl >= 0 ? "+" : ""}`,
+        sub: `العائد: ${WCUtils.percent(c.returnPct)}`
       })}
 
       ${WCUI.statGrid([
-        { icon: "💵", label: "إجمالي التكلفة", value: WCUtils.money(totalCost) },
-        { icon: "📈", label: "القيمة الحالية", value: WCUtils.money(totalValue) },
-        { icon: profit >= 0 ? "🟢" : "🔴", label: "الربح / الخسارة", value: WCUtils.money(profit), type: profit >= 0 ? "success" : "danger" },
-        { icon: "🏢", label: "عدد الشركات", value: list.length }
+        { icon: "💵", label: "إجمالي التكلفة", value: WCUtils.money(c.cost) },
+        { icon: "📈", label: "القيمة الحالية", value: WCUtils.money(c.value) },
+        { icon: c.pnl >= 0 ? "🟢" : "🔴", label: "الربح / الخسارة", value: WCUtils.money(c.pnl), type: c.pnl < 0 ? "danger" : "gold" },
+        { icon: "🏢", label: "عدد الشركات", value: String(c.stocks.length) },
+        { icon: "💸", label: "التوزيعات", value: WCUtils.money(c.divTotal), type: "gold" },
+        { icon: "📊", label: "العائد", value: WCUtils.percent(c.returnPct) }
       ])}
 
-      ${WCUI.formCard(
-        "➕ إضافة سهم",
-        [
-          WCUI.input("pName", "اسم الشركة مثال: ADIB"),
-          WCUI.input("pSymbol", "الرمز مثال: ADIB"),
-          WCUI.input("pSector", "القطاع مثال: بنوك"),
-          WCUI.input("pQty", "الكمية", "number"),
-          WCUI.input("pAvg", "متوسط الشراء", "number", "0.001"),
-          WCUI.input("pPrice", "السعر الحالي", "number", "0.001")
-        ],
-        "حفظ السهم",
-        "PWC_Portfolio.add()"
-      )}
-
-      <section class="tableCard">
-        <h3>قائمة الأسهم</h3>
-        ${renderList(list, totalValue)}
-      </section>
-
-      ${WCUI.decision(portfolioInsight(list, totalValue))}
+      ${stockForm()}
+      ${stockList(c)}
+      ${dividendForm()}
+      ${dividendList(c)}
+      ${WCUI.decision(portfolioInsight(c))}
     `;
   }
 
-  function renderList(list, totalValue) {
-    if (!list.length) {
-      return `
-        <div class="emptyState inner">
-          <h3>لا توجد أسهم حالياً</h3>
-          <p>أضف أول سهم عشان يبدأ التحليل.</p>
-        </div>
-      `;
-    }
-
+  function stockForm() {
     return `
-      <div class="stockList">
-        ${list.map(x => {
-          const weight = totalValue > 0 ? (WCUtils.num(x.currentValue) / totalValue) * 100 : 0;
-          const profit = WCUtils.num(x.currentValue) - WCUtils.num(x.totalCost);
-          const pct = WCUtils.num(x.totalCost) > 0 ? (profit / WCUtils.num(x.totalCost)) * 100 : 0;
-
-          return `
-            <div class="stockItem">
-              <div>
-                <strong>${x.name}</strong>
-                <small>${x.symbol} • ${x.sector || "غير محدد"}</small>
-              </div>
-
-              <div>
-                <b>${WCUtils.money(x.currentValue)}</b>
-                <small class="${profit >= 0 ? "positiveText" : "negativeText"}">
-                  ${profit >= 0 ? "+" : ""}${WCUtils.money(profit)} / ${WCUtils.percent(pct)}
-                </small>
-              </div>
-
-              <div>
-                <small>الوزن</small>
-                <b>${WCUtils.percent(weight)}</b>
-              </div>
-
-              <button class="miniBtn dangerBtn" onclick="PWC_Portfolio.remove('${x.id}')">حذف</button>
-            </div>
-          `;
-        }).join("")}
+      <div class="formCard">
+        <h3>➕ إضافة سهم</h3>
+        <div class="formGrid">
+          <input id="pfName" placeholder="اسم الشركة مثال: ADIB">
+          <input id="pfSymbol" placeholder="الرمز مثال: ADIB">
+          <input id="pfSector" placeholder="القطاع مثال: بنوك">
+          <input id="pfQty" type="number" step="0.01" placeholder="الكمية">
+          <input id="pfAvg" type="number" step="0.01" placeholder="متوسط الشراء">
+          <input id="pfPrice" type="number" step="0.01" placeholder="السعر الحالي">
+        </div>
+        <button class="mainBtn" onclick="PWC_Portfolio.addStock()">حفظ السهم</button>
       </div>
     `;
   }
 
-  function add() {
-    const name = WCUtils.byId("pName").value.trim();
-    const symbol = WCUtils.byId("pSymbol").value.trim();
-    const sector = WCUtils.byId("pSector").value.trim();
+  function dividendForm() {
+    return `
+      <div class="formCard">
+        <h3>💸 إضافة توزيع</h3>
+        <div class="formGrid">
+          <input id="dvCompany" placeholder="الشركة">
+          <input id="dvAmount" type="number" step="0.01" placeholder="قيمة التوزيع">
+          <input id="dvDate" type="date" value="${WCUtils.today()}">
+          <input id="dvNote" placeholder="ملاحظة اختيارية">
+        </div>
+        <button class="mainBtn" onclick="PWC_Portfolio.addDividend()">حفظ التوزيع</button>
+      </div>
+    `;
+  }
 
-    const qty = WCUtils.num(WCUtils.byId("pQty").value);
-    const avg = WCUtils.num(WCUtils.byId("pAvg").value);
-    const price = WCUtils.num(WCUtils.byId("pPrice").value);
-
-    if (!name || qty <= 0 || avg <= 0 || price <= 0) {
-      alert("دخل اسم الشركة، الكمية، متوسط الشراء، والسعر الحالي.");
-      return;
+  function stockList(c) {
+    if (!c.stocks.length) {
+      return WCUI.empty("قائمة الأسهم", "لا توجد أسهم حالياً. أضف أول سهم عشان يبدأ التحليل.");
     }
+
+    return `
+      <div class="tableCard">
+        <h3>📋 الأسهم</h3>
+        <div class="stockList">
+          ${c.stocks.map(x => {
+            const qty = WCUtils.num(x.quantity);
+            const avg = WCUtils.num(x.avgPrice);
+            const price = WCUtils.num(x.currentPrice || x.avgPrice);
+            const value = qty * price;
+            const cost = qty * avg;
+            const pnl = value - cost;
+            const weight = c.value > 0 ? (value / c.value) * 100 : 0;
+
+            return `
+              <div class="stockItem">
+                <strong>${x.name || x.symbol || "سهم"}</strong>
+                <small>${x.symbol || "-"} • ${x.sector || "غير مصنف"} • وزن ${WCUtils.percent(weight)}</small>
+                <b>${WCUtils.money(value)}</b>
+                <button class="miniBtn dangerBtn" onclick="PWC_Portfolio.removeStock('${x.id}')">حذف</button>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function dividendList(c) {
+    if (!c.dividends.length) {
+      return WCUI.empty("التوزيعات", "لا توجد توزيعات حالياً. أضف أول توزيع لمتابعة الدخل السلبي.");
+    }
+
+    return `
+      <div class="tableCard">
+        <h3>💸 التوزيعات</h3>
+        <div class="stockList">
+          ${c.dividends.slice().reverse().map(x => `
+            <div class="stockItem">
+              <strong>${x.company || "توزيع"}</strong>
+              <small>${x.date || "-"} • ${x.note || ""}</small>
+              <b>${WCUtils.money(x.amount)}</b>
+              <button class="miniBtn dangerBtn" onclick="PWC_Portfolio.removeDividend('${x.id}')">حذف</button>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function portfolioInsight(c) {
+    if (!c.stocks.length) return "ابدأ بإضافة أسهمك الحالية حتى تحصل على قراءة فعلية للمحفظة.";
+    if (c.pnl < 0) return "المحفظة حالياً تحت التكلفة. راقب متوسط الشراء ولا تزيد التركيز في سهم واحد.";
+    if (c.divTotal <= 0) return "المحفظة موجودة، لكن لم يتم تسجيل توزيعات بعد. أضف التوزيعات لمتابعة الدخل السلبي.";
+    return "المحفظة بدأت تعطي صورة أوضح. استمر بتحديث الأسعار والتوزيعات بشكل دوري.";
+  }
+
+  function addStock() {
+    const name = WCUtils.byId("pfName").value.trim();
+    const symbol = WCUtils.byId("pfSymbol").value.trim();
+    const sector = WCUtils.byId("pfSector").value.trim();
+    const quantity = WCUtils.num(WCUtils.byId("pfQty").value);
+    const avgPrice = WCUtils.num(WCUtils.byId("pfAvg").value);
+    const currentPrice = WCUtils.num(WCUtils.byId("pfPrice").value);
+
+    if (!name && !symbol) return alert("دخل اسم الشركة أو الرمز.");
+    if (quantity <= 0 || avgPrice <= 0) return alert("دخل الكمية ومتوسط الشراء.");
 
     WCStore.update(data => {
       data.portfolio.push({
         id: WCUtils.uid(),
         name,
-        symbol: symbol || name,
+        symbol,
         sector,
-        quantity: qty,
-        avgCost: avg,
-        currentPrice: price,
-        totalCost: qty * avg,
-        currentValue: qty * price,
+        quantity,
+        avgPrice,
+        currentPrice: currentPrice || avgPrice,
         createdAt: WCUtils.today()
       });
     });
   }
 
-  function remove(id) {
-    if (!confirm("حذف السهم من المحفظة؟")) return;
+  function addDividend() {
+    const company = WCUtils.byId("dvCompany").value.trim();
+    const amount = WCUtils.num(WCUtils.byId("dvAmount").value);
+    const date = WCUtils.byId("dvDate").value || WCUtils.today();
+    const note = WCUtils.byId("dvNote").value.trim();
 
+    if (!company) return alert("دخل اسم الشركة.");
+    if (amount <= 0) return alert("دخل قيمة التوزيع.");
+
+    WCStore.update(data => {
+      data.dividends.push({
+        id: WCUtils.uid(),
+        company,
+        amount,
+        date,
+        note
+      });
+    });
+  }
+
+  function removeStock(id) {
+    if (!confirm("حذف السهم؟")) return;
     WCStore.update(data => {
       data.portfolio = data.portfolio.filter(x => x.id !== id);
     });
   }
 
-  function portfolioInsight(list, totalValue) {
-    if (!list.length) return "ابدأ بإضافة أسهمك الحالية حتى يعطيك الموقع قراءة فعلية للمحفظة.";
-
-    const biggest = [...list].sort((a, b) => WCUtils.num(b.currentValue) - WCUtils.num(a.currentValue))[0];
-    const weight = totalValue > 0 ? (WCUtils.num(biggest.currentValue) / totalValue) * 100 : 0;
-
-    if (weight > 40) {
-      return `يوجد تركّز عالي في ${biggest.name} بنسبة ${WCUtils.percent(weight)} من المحفظة. راقب التنويع لتقليل المخاطر.`;
-    }
-
-    if (list.length < 5) {
-      return "المحفظة ما زالت في مرحلة بناء. الأفضل لاحقاً توزيعها على عدة شركات وقطاعات.";
-    }
-
-    return "المحفظة تبدو متوازنة مبدئياً. استمر في المتابعة الشهرية وتحديث الأسعار.";
+  function removeDividend(id) {
+    if (!confirm("حذف التوزيع؟")) return;
+    WCStore.update(data => {
+      data.dividends = data.dividends.filter(x => x.id !== id);
+    });
   }
 
-  window.PWC_Portfolio = {
-    add,
-    remove
-  };
+  window.PWC_Portfolio = { addStock, addDividend, removeStock, removeDividend };
 
   WCEvents.on("dataChanged", render);
   document.addEventListener("DOMContentLoaded", render);
-
 })();
