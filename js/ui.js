@@ -1,84 +1,83 @@
 /* ==========================================================
-   Personal Wealth Center
-   UI Components System
-   Version: 1.0.0
+   Personal Wealth Center UI Components System
+   Version: 1.2.0
 ========================================================== */
-
 "use strict";
 
 const WCUI = (() => {
-
   function badge(text) {
-    return `<span class="badge">${text}</span>`;
+    return `<span class="heroTag">${text || "Wealth Center"}</span>`;
   }
 
   function pageHero(title, desc, tag = "Wealth Center") {
     return `
-      <section class="pageHero">
+      <div class="pageHero">
         ${badge(tag)}
         <h2>${title}</h2>
-        <p>${desc}</p>
-      </section>
+        <p>${desc || ""}</p>
+      </div>
     `;
   }
 
   function heroCard({ tag, title, desc, value, sub }) {
     return `
-      <section class="heroCard">
+      <div class="heroCard">
         <div class="heroTop">
-          ${badge(tag || "Overview")}
+          <span class="heroTag">${tag || "Overview"}</span>
           <span class="version">V${WC_CONFIG.app.version}</span>
         </div>
-        <h2>${title}</h2>
+
+        <h2>${title || ""}</h2>
         <p>${desc || ""}</p>
+
         <div class="heroValue">${value || ""}</div>
-        <small>${sub || ""}</small>
-      </section>
+        <div class="heroSub">${sub || ""}</div>
+      </div>
     `;
   }
 
   function statCard({ icon, label, value, type = "" }) {
     return `
       <div class="statCard ${type}">
-        <span>${icon || "•"}</span>
-        <small>${label}</small>
-        <strong>${value}</strong>
+        <div class="statIcon">${icon || "•"}</div>
+        <div class="statLabel">${label || ""}</div>
+        <div class="statValue">${value || ""}</div>
       </div>
     `;
   }
 
   function statGrid(items = []) {
     return `
-      <section class="gridCards">
+      <div class="statGrid">
         ${items.map(statCard).join("")}
-      </section>
+      </div>
     `;
   }
 
   function card(title, body, className = "") {
     return `
-      <section class="infoCard ${className}">
-        <h3>${title}</h3>
-        <div>${body}</div>
-      </section>
+      <div class="tableCard ${className}">
+        <h3>${title || ""}</h3>
+        <div>${body || ""}</div>
+      </div>
     `;
   }
 
   function decision(text) {
     return `
-      <section class="decisionCard">
+      <div class="decisionCard">
         <h3>💡 التحليل الذكي</h3>
-        <p>${text}</p>
-      </section>
+        <p>${text || ""}</p>
+      </div>
     `;
   }
 
   function empty(title, text) {
     return `
-      <section class="emptyState">
-        <h3>${title}</h3>
-        <p>${text}</p>
-      </section>
+      <div class="emptyCard">
+        <h3>${title || ""}</h3>
+        <p>${text || ""}</p>
+      </div>
     `;
   }
 
@@ -91,20 +90,21 @@ const WCUI = (() => {
       <input 
         id="${id}" 
         type="${type}" 
-        ${step ? `step="${step}"` : ""} 
-        placeholder="${placeholder}">
+        placeholder="${placeholder || ""}" 
+        ${step ? `step="${step}"` : ""}
+      />
     `;
   }
 
   function formCard(title, fields, buttonText, action) {
     return `
-      <section class="formCard">
-        <h3>${title}</h3>
+      <div class="formCard">
+        <h3>${title || ""}</h3>
         <div class="formGrid">
           ${fields.join("")}
         </div>
         ${button(buttonText, action)}
-      </section>
+      </div>
     `;
   }
 
@@ -112,16 +112,18 @@ const WCUI = (() => {
     const safe = Math.max(0, Math.min(100, WCUtils.num(percent)));
 
     return `
-      <section class="progressCard">
+      <div class="progressCard">
         <div class="progressTop">
-          <h3>${title}</h3>
-          <strong>${WCUtils.percent(safe)}</strong>
+          <h3>${title || ""}</h3>
+          <div class="progressPercent">${WCUtils.percent(safe)}</div>
         </div>
+
         <div class="progressBar">
-          <span style="width:${safe}%"></span>
+          <div class="progressFill" style="width:${safe}%"></div>
         </div>
+
         <p>${text || ""}</p>
-      </section>
+      </div>
     `;
   }
 
@@ -139,7 +141,6 @@ const WCUI = (() => {
     formCard,
     progress
   };
-
 })();
 
 window.WCUI = WCUI;
