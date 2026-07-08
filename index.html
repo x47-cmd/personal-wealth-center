@@ -7,17 +7,19 @@
   <title>مركز إدارة الثروة الشخصية</title>
 
   <script>
-  document.write(`<link rel="stylesheet" href="css/style.css?v=${Date.now()}" />`);
-</script>
+    document.write(`<link rel="stylesheet" href="css/style.css?v=${Date.now()}" />`);
+  </script>
 </head>
 
 <body>
   <div id="appShell">
-    <header class="appHeader">
-      <div>
-        <span class="appBadge">Wealth Center</span>
+
+    <header class="topBrand">
+      <div class="brandIcon">💰</div>
+
+      <div class="brandText">
         <h1>مركز إدارة الثروة الشخصية</h1>
-        <p>منصة موحدة لإدارة المحفظة، المصروفات، الثروة، التحليل، والأهداف المالية.</p>
+        <p>Personal Wealth Center</p>
       </div>
     </header>
 
@@ -30,6 +32,7 @@
       <section id="settings" class="page"></section>
       <section id="quick" class="page"></section>
     </main>
+
   </div>
 
   <nav class="bottomNav bottom-nav" aria-label="التنقل الرئيسي">
@@ -59,25 +62,25 @@
   </nav>
 
   <script>
-  const PWC_DEV_VERSION = Date.now();
+    const PWC_DEV_VERSION = Date.now();
 
-  [
-    "js/config.js",
-    "js/utils.js",
-    "js/events.js",
-    "js/store.js",
-    "js/ui.js",
-    "js/app.js",
-    "js/home.js",
-    "js/portfolio.js",
-    "js/spending.js",
-    "js/assets.js",
-    "js/reports.js",
-    "js/settings.js",
-    "js/quick.js"
-  ].forEach(src => {
-    document.write(`<script src="${src}?v=${PWC_DEV_VERSION}"><\/script>`);
-  });
-</script>
+    [
+      "js/config.js",
+      "js/utils.js",
+      "js/events.js",
+      "js/store.js",
+      "js/ui.js",
+      "js/app.js",
+      "js/home.js",
+      "js/portfolio.js",
+      "js/spending.js",
+      "js/assets.js",
+      "js/reports.js",
+      "js/settings.js",
+      "js/quick.js"
+    ].forEach(src => {
+      document.write(`<script src="${src}?v=${PWC_DEV_VERSION}"><\/script>`);
+    });
+  </script>
 </body>
 </html>
