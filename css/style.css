@@ -1,6 +1,6 @@
 /* =========================================================
-   Personal Wealth Center - Clean Premium Style V4
-   iPhone Ready + 6 Bottom Nav + Overflow Fixed
+   Personal Wealth Center - Clean Premium Style V4 Final
+   iPhone Ready / 6 Bottom Nav / No Duplicate Overrides
 ========================================================= */
 
 *{
@@ -34,15 +34,17 @@ body{
   color:var(--text);
   direction:rtl;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
-  padding-bottom:190px;
+  padding-bottom:115px;
 }
 
 #appShell{
   width:100%;
   max-width:980px;
   margin:0 auto;
-  padding:22px 16px 210px;
+  padding:22px 16px 115px;
 }
+
+/* Header */
 
 .appHeader{
   background:linear-gradient(135deg,#172236,#070d1d);
@@ -51,6 +53,7 @@ body{
   padding:34px 28px;
   margin-bottom:28px;
   box-shadow:var(--shadow);
+  overflow:hidden;
 }
 
 .appBadge,
@@ -79,15 +82,19 @@ body{
   line-height:1.9;
 }
 
+/* Pages */
+
 .page{
   display:none;
-  padding-bottom:170px;
+  padding-bottom:50px;
 }
 
 .page.active,
 .page.on{
   display:block;
 }
+
+/* Hero */
 
 .heroCard{
   background:linear-gradient(135deg,#1e293b,#020617);
@@ -157,6 +164,7 @@ body{
   margin:12px 0;
   color:var(--navy);
   font-weight:1000;
+  line-height:1.35;
 }
 
 .pageHero p{
@@ -165,6 +173,8 @@ body{
   line-height:1.9;
   margin:0;
 }
+
+/* Stats */
 
 .statGrid{
   display:grid;
@@ -217,6 +227,8 @@ body{
   color:var(--red);
 }
 
+/* Cards */
+
 .progressCard,
 .formCard,
 .tableCard,
@@ -247,12 +259,14 @@ body{
   font-size:24px;
   color:var(--navy);
   font-weight:1000;
+  line-height:1.35;
 }
 
 .progressPercent{
   font-size:22px;
   font-weight:1000;
   color:var(--navy);
+  direction:ltr;
 }
 
 .progressBar{
@@ -283,6 +297,8 @@ body{
   background:#fffbeb;
   border-color:#fde68a;
 }
+
+/* Forms */
 
 .formGrid{
   display:grid;
@@ -338,6 +354,8 @@ body{
   color:var(--red);
 }
 
+/* Lists */
+
 .quickSpendGrid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -376,12 +394,14 @@ body{
   font-size:16px;
 }
 
+/* Bottom Navigation */
+
 .bottomNav{
   position:fixed;
   left:14px;
   right:14px;
-  bottom:calc(16px + env(safe-area-inset-bottom));
-  height:82px;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  height:80px;
   display:grid;
   grid-template-columns:repeat(6,1fr);
   align-items:center;
@@ -398,7 +418,7 @@ body{
 .navBtn{
   width:100%;
   min-width:0;
-  height:66px;
+  height:64px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -434,6 +454,8 @@ body{
   color:#f6c945;
 }
 
+/* Desktop / Tablet */
+
 @media (min-width:700px){
   .statGrid{
     grid-template-columns:repeat(3,1fr);
@@ -444,17 +466,19 @@ body{
   }
 }
 
+/* iPhone */
+
 @media (max-width:430px){
   body{
-    padding-bottom:190px;
+    padding-bottom:115px;
   }
 
   #appShell{
-    padding:18px 14px 210px;
+    padding:18px 14px 115px;
   }
 
   .page{
-    padding-bottom:170px;
+    padding-bottom:50px;
   }
 
   .appHeader{
@@ -534,12 +558,29 @@ body{
     border-radius:24px;
   }
 
+  .progressTop{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
+
   .progressTop h3,
   .formCard h3,
   .tableCard h3,
   .emptyCard h3,
   .decisionCard h3{
     font-size:23px;
+  }
+
+  .progressPercent{
+    font-size:24px;
+    line-height:1;
+  }
+
+  .progressCard p{
+    font-size:15px;
+    line-height:1.8;
   }
 
   .bottomNav{
@@ -563,38 +604,5 @@ body{
 
   .navBtn small{
     font-size:8.5px;
-  }
-}
-
-/* =========================================================
-   Progress Cards Mobile Fix
-========================================================= */
-
-@media (max-width:430px){
-  .progressTop{
-    display:flex !important;
-    flex-direction:column !important;
-    align-items:flex-start !important;
-    gap:6px !important;
-  }
-
-  .progressTop h3{
-    font-size:22px !important;
-    line-height:1.35 !important;
-    margin:0 !important;
-  }
-
-  .progressPercent{
-    font-size:24px !important;
-    line-height:1 !important;
-  }
-
-  .progressCard{
-    padding:20px 18px !important;
-  }
-
-  .progressCard p{
-    font-size:15px !important;
-    line-height:1.8 !important;
   }
 }
