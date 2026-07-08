@@ -396,27 +396,29 @@ body{
 
 /* Bottom Navigation */
 
-.bottomNav{
-  position:fixed;
-  left:12px;
-  right:12px;
-  bottom:0;
-  height:92px;
-  display:grid;
-  grid-template-columns:repeat(6,1fr);
-  align-items:start;
-  gap:4px;
-  padding:7px 6px calc(7px + env(safe-area-inset-bottom));
-  background:white;
-  border:1px solid #edf0f5;
-  border-bottom:none;
-  border-radius:25px 25px 0 0;
-  box-shadow:0 -10px 30px rgba(15,23,42,.10);
-  overflow:hidden;
-  z-index:99999;
+.bottomNav,
+.bottom-nav{
+  position:fixed !important;
+  left:12px !important;
+  right:12px !important;
+  bottom:0 !important;
+  height:92px !important;
+  display:grid !important;
+  grid-template-columns:repeat(6,1fr) !important;
+  align-items:start !important;
+  gap:4px !important;
+  padding:7px 6px calc(7px + env(safe-area-inset-bottom)) !important;
+  background:white !important;
+  border:1px solid #edf0f5 !important;
+  border-bottom:none !important;
+  border-radius:25px 25px 0 0 !important;
+  box-shadow:0 -10px 30px rgba(15,23,42,.10) !important;
+  overflow:hidden !important;
+  z-index:999999 !important;
 }
 
-.navBtn{
+.bottomNav .navBtn,
+.bottom-nav .navBtn{
   width:100%;
   min-width:0;
   height:64px;
@@ -437,20 +439,23 @@ body{
   transition:.2s ease;
 }
 
-.navBtn span{
+.bottomNav .navBtn span,
+.bottom-nav .navBtn span{
   font-size:19px;
   line-height:1;
   margin:0 0 4px;
 }
 
-.navBtn small{
+.bottomNav .navBtn small,
+.bottom-nav .navBtn small{
   font-size:8.5px;
   font-weight:900;
   line-height:1;
   white-space:nowrap;
 }
 
-.navBtn.active{
+.bottomNav .navBtn.active,
+.bottom-nav .navBtn.active{
   background:#0b1020;
   color:#f6c945;
 }
