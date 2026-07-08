@@ -374,3 +374,33 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.formGrid select {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 13px;
+  font-size: 14px;
+  outline: none;
+}
+
+.formGrid select:focus {
+  border-color: #d4af37;
+  background: #ffffff;
+}
+
+.quickSpendGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.quickSpendGrid .miniBtn {
+  background: #f8fafc;
+  color: #0f172a;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  border-radius: 16px;
+  font-weight: 900;
+}
