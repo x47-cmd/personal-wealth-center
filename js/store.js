@@ -1,13 +1,10 @@
 /* ==========================================================
-   Personal Wealth Center
-   Data Store
-   Version: 1.0.0
+   Personal Wealth Center Data Store
+   Version: 1.1.0
 ========================================================== */
-
 "use strict";
 
 const WCStore = (() => {
-
   const KEY = WC_CONFIG.storage.main;
 
   function clone(obj) {
@@ -29,6 +26,11 @@ const WCStore = (() => {
       dividends: clone(WC_CONFIG.defaults.dividends),
       assets: clone(WC_CONFIG.defaults.assets),
       liabilities: clone(WC_CONFIG.defaults.liabilities),
+
+      expenses: clone(WC_CONFIG.defaults.expenses),
+      budgets: clone(WC_CONFIG.defaults.budgets),
+      spendingSettings: clone(WC_CONFIG.defaults.spendingSettings),
+
       goals: clone(WC_CONFIG.defaults.goals),
       snapshots: clone(WC_CONFIG.defaults.snapshots),
 
@@ -36,18 +38,55 @@ const WCStore = (() => {
     };
   }
 
+  function normalize(data = {}) {
+    const base = defaultData();
+
+    return {
+      ...base,
+      ...data,
+
+      meta: {
+        ...base.meta,
+        ...(data.meta || {})
+      },
+
+      profile: {
+        ...base.profile,
+        ...(data.profile || {})
+      },
+
+      settings: {
+        ...base.settings,
+        ...(data.settings || {})
+      },
+
+      spendingSettings: {
+        ...base.spendingSettings,
+        ...(data.spendingSettings || {})
+      },
+
+      portfolio: Array.isArray(data.portfolio) ? data.portfolio : [],
+      dividends: Array.isArray(data.dividends) ? data.dividends : [],
+      assets: Array.isArray(data.assets) ? data.assets : [],
+      liabilities: Array.isArray(data.liabilities) ? data.liabilities : [],
+      expenses: Array.isArray(data.expenses) ? data.expenses : [],
+      budgets: Array.isArray(data.budgets) ? data.budgets : [],
+      goals: Array.isArray(data.goals) ? data.goals : [],
+      snapshots: Array.isArray(data.snapshots) ? data.snapshots : []
+    };
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
+
       if (!raw) {
         const fresh = defaultData();
         save(fresh, false);
         return fresh;
       }
 
-      const data = JSON.parse(raw);
-      return normalize(data);
-
+      return normalize(JSON.parse(raw));
     } catch (e) {
       console.warn("WCStore load failed:", e);
       return defaultData();
@@ -67,33 +106,6 @@ const WCStore = (() => {
     }
 
     return safeData;
-  }
-
-  function normalize(data) {
-    const base = defaultData();
-
-    return {
-      ...base,
-      ...data,
-      meta: {
-        ...base.meta,
-        ...(data.meta || {})
-      },
-      profile: {
-        ...base.profile,
-        ...(data.profile || {})
-      },
-      settings: {
-        ...base.settings,
-        ...(data.settings || {})
-      },
-      portfolio: Array.isArray(data.portfolio) ? data.portfolio : [],
-      dividends: Array.isArray(data.dividends) ? data.dividends : [],
-      assets: Array.isArray(data.assets) ? data.assets : [],
-      liabilities: Array.isArray(data.liabilities) ? data.liabilities : [],
-      goals: Array.isArray(data.goals) ? data.goals : [],
-      snapshots: Array.isArray(data.snapshots) ? data.snapshots : []
-    };
   }
 
   function get() {
@@ -133,7 +145,6 @@ const WCStore = (() => {
     backup,
     defaultData
   };
-
 })();
 
 window.WCStore = WCStore;
