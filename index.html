@@ -1,54 +1,38 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
-
   <title>مركز إدارة الثروة الشخصية</title>
-
   <link rel="stylesheet" href="css/style.css" />
 </head>
 
 <body>
-
   <div id="appShell">
-
     <header class="appHeader">
       <div>
         <span class="appBadge">Wealth Center</span>
         <h1>مركز إدارة الثروة الشخصية</h1>
-        <p>لوحة موحدة لمتابعة الأصول، المحفظة، الديون، التوزيعات، والأهداف المالية.</p>
+        <p>لوحة موحدة لمتابعة الأصول، المحفظة، الديون، التوزيعات، المصروفات، والأهداف المالية.</p>
       </div>
     </header>
 
     <main id="app">
-
       <section id="home" class="page active"></section>
-
       <section id="portfolio" class="page"></section>
-
       <section id="dividends" class="page"></section>
-
       <section id="assets" class="page"></section>
-
       <section id="liabilities" class="page"></section>
-
+      <section id="spending" class="page"></section>
       <section id="goals" class="page"></section>
-
       <section id="reports" class="page"></section>
-
       <section id="quick" class="page"></section>
-
       <section id="settings" class="page"></section>
-
     </main>
-
   </div>
 
   <nav class="bottomNav" aria-label="التنقل الرئيسي">
-
     <button class="navBtn active" data-page="home" onclick="WC.go('home', this)">
       <span>🏠</span>
       <small>الرئيسية</small>
@@ -60,38 +44,42 @@
     </button>
 
     <button class="navBtn" data-page="dividends" onclick="WC.go('dividends', this)">
-      <span>💰</span>
+      <span>💸</span>
       <small>التوزيعات</small>
     </button>
 
     <button class="navBtn" data-page="assets" onclick="WC.go('assets', this)">
-      <span>🏦</span>
+      <span>💎</span>
       <small>الثروة</small>
+    </button>
+
+    <button class="navBtn" data-page="spending" onclick="WC.go('spending', this)">
+      <span>💳</span>
+      <small>المصروفات</small>
     </button>
 
     <button class="navBtn" data-page="reports" onclick="WC.go('reports', this)">
       <span>📊</span>
       <small>التحليل</small>
     </button>
-
   </nav>
 
-<script src="js/config.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/events.js"></script>
-<script src="js/store.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/app.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
 
-<script src="js/home.js"></script>
-<script src="js/portfolio.js"></script>
-<script src="js/dividends.js"></script>
-<script src="js/assets.js"></script>
-<script src="js/liabilities.js"></script>
-<script src="js/goals.js"></script>
-<script src="js/reports.js"></script>
-<script src="js/quick.js"></script>
-<script src="js/settings.js"></script>
-
+  <script src="js/home.js"></script>
+  <script src="js/portfolio.js"></script>
+  <script src="js/dividends.js"></script>
+  <script src="js/assets.js"></script>
+  <script src="js/liabilities.js"></script>
+  <script src="js/spending.js"></script>
+  <script src="js/goals.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/quick.js"></script>
+  <script src="js/settings.js"></script>
 </body>
 </html>
