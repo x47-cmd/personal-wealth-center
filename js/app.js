@@ -1,99 +1,52 @@
 /* ==========================================================
-   Personal Wealth Center
-   App Core
-   Version: 1.0.0
+   Personal Wealth Center App Controller
+   Version: 1.1.0
 ========================================================== */
-
 "use strict";
 
 const WC = (() => {
+  function go(pageId, btn) {
+    document.querySelectorAll(".page").forEach(page => {
+      page.classList.remove("active", "on");
+    });
 
-    const VERSION = "1.0.0";
-
-    function init() {
-
-        console.log(
-            "%cPersonal Wealth Center",
-            "color:#d4af37;font-size:18px;font-weight:bold;"
-        );
-
-        console.log("Version:", VERSION);
-
-        bindNavigation();
-
-        window.dispatchEvent(new Event("wealth-ready"));
-
+    const page = document.getElementById(pageId);
+    if (page) {
+      page.classList.add("active", "on");
     }
 
-    function bindNavigation() {
+    document.querySelectorAll(".navBtn").forEach(b => {
+      b.classList.remove("active");
+    });
 
-        document.querySelectorAll(".navBtn").forEach(btn => {
-
-            btn.addEventListener("click", () => {
-
-                document
-                    .querySelectorAll(".navBtn")
-                    .forEach(x => x.classList.remove("active"));
-
-                btn.classList.add("active");
-
-            });
-
-        });
-
+    if (btn) {
+      btn.classList.add("active");
+    } else {
+      const found = document.querySelector(`.navBtn[data-page="${pageId}"]`);
+      if (found) found.classList.add("active");
     }
 
-    function go(page, button = null) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
-        document.querySelectorAll(".page").forEach(p => {
+    WCEvents.emit("pageChanged", { page: pageId });
+  }
 
-            p.classList.remove("active");
+  function init() {
+    const data = WCStore.get();
+    WCStore.save(data, false);
 
-        });
+    const activeBtn = document.querySelector(".navBtn.active");
+    const activePage = activeBtn ? activeBtn.dataset.page : "home";
 
-        const target = document.getElementById(page);
+    go(activePage || "home", activeBtn);
+  }
 
-        if (target)
-            target.classList.add("active");
+  document.addEventListener("DOMContentLoaded", init);
 
-        if (button) {
-
-            document.querySelectorAll(".navBtn").forEach(x => {
-
-                x.classList.remove("active");
-
-            });
-
-            button.classList.add("active");
-
-        }
-
-        window.dispatchEvent(
-
-            new CustomEvent("pageChanged", {
-
-                detail: {
-
-                    page
-
-                }
-
-            })
-
-        );
-
-    }
-
-    return {
-
-        VERSION,
-
-        init,
-
-        go
-
-    };
-
+  return {
+    go,
+    init
+  };
 })();
 
-document.addEventListener("DOMContentLoaded", WC.init);
+window.WC = WC;
