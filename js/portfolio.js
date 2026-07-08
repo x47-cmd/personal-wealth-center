@@ -1,8 +1,10 @@
 /* ==========================================================
    Personal Wealth Center
-   Portfolio Management Pro V1.2
+   Investments Center V2.1
    File: js/portfolio.js
+   UAE Stocks / Smart Add / Auto Price / News / Capital
 ========================================================== */
+
 "use strict";
 
 (function () {
@@ -10,523 +12,616 @@
   if (!page) return;
 
   const state = {
-    query: "",
+    q: "",
     market: "all",
     sector: "all",
-    editingId: null
+    selected: "",
+    prices: {},
+    news: [],
+    loading: false,
+    newsLoading: false
   };
 
-  function ensure(data) {
-    data.portfolio = Array.isArray(data.portfolio) ? data.portfolio : [];
-    data.dividends = Array.isArray(data.dividends) ? data.dividends : [];
+  const UAE_STOCKS = [
+    {symbol:"ADIB", ar:"مصرف أبوظبي الإسلامي", name:"Abu Dhabi Islamic Bank", market:"ADX", sector:"بنوك", yahoo:["ADIB.AD"]},
+    {symbol:"ADCB", ar:"بنك أبوظبي التجاري", name:"Abu Dhabi Commercial Bank", market:"ADX", sector:"بنوك", yahoo:["ADCB.AD"]},
+    {symbol:"FAB", ar:"بنك أبوظبي الأول", name:"First Abu Dhabi Bank", market:"ADX", sector:"بنوك", yahoo:["FAB.AD"]},
+    {symbol:"ADNOCDRILL", ar:"أدنوك للحفر", name:"ADNOC Drilling", market:"ADX", sector:"طاقة", yahoo:["ADNOCDRILL.AD"]},
+    {symbol:"ADNOCGAS", ar:"أدنوك للغاز", name:"ADNOC Gas", market:"ADX", sector:"طاقة", yahoo:["ADNOCGAS.AD"]},
+    {symbol:"ADNOCDIST", ar:"أدنوك للتوزيع", name:"ADNOC Distribution", market:"ADX", sector:"طاقة", yahoo:["ADNOCDIST.AD"]},
+    {symbol:"ALDAR", ar:"الدار العقارية", name:"Aldar Properties", market:"ADX", sector:"عقار", yahoo:["ALDAR.AD"]},
+    {symbol:"TAQA", ar:"طاقة", name:"TAQA", market:"ADX", sector:"مرافق", yahoo:["TAQA.AD"]},
+    {symbol:"MULTIPLY", ar:"ملتيبلاي", name:"Multiply Group", market:"ADX", sector:"استثمار", yahoo:["MULTIPLY.AD"]},
+    {symbol:"BOROUGE", ar:"بروج", name:"Borouge", market:"ADX", sector:"صناعة", yahoo:["BOROUGE.AD"]},
+    {symbol:"FERTIGLB", ar:"فيرتيغلوب", name:"Fertiglobe", market:"ADX", sector:"صناعة", yahoo:["FERTIGLB.AD"]},
+    {symbol:"DANA", ar:"دانة غاز", name:"Dana Gas", market:"ADX", sector:"طاقة", yahoo:["DANA.AD"]},
+    {symbol:"EAND", ar:"إي آند", name:"e&", market:"ADX", sector:"اتصالات", yahoo:["EAND.AD"]},
+    {symbol:"AGTHIA", ar:"أغذية", name:"Agthia", market:"ADX", sector:"أغذية", yahoo:["AGTHIA.AD"]},
+
+    {symbol:"EMAAR", ar:"إعمار العقارية", name:"Emaar Properties", market:"DFM", sector:"عقار", yahoo:["EMAAR.AE"]},
+    {symbol:"EMAARDEV", ar:"إعمار للتطوير", name:"Emaar Development", market:"DFM", sector:"عقار", yahoo:["EMAARDEV.AE"]},
+    {symbol:"DEWA", ar:"ديوا", name:"Dubai Electricity and Water Authority", market:"DFM", sector:"مرافق", yahoo:["DEWA.AE"]},
+    {symbol:"DIB", ar:"بنك دبي الإسلامي", name:"Dubai Islamic Bank", market:"DFM", sector:"بنوك", yahoo:["DIB.AE"]},
+    {symbol:"EMIRATESNBD", ar:"الإمارات دبي الوطني", name:"Emirates NBD", market:"DFM", sector:"بنوك", yahoo:["EMIRATESNBD.AE"]},
+    {symbol:"DFM", ar:"سوق دبي المالي", name:"Dubai Financial Market", market:"DFM", sector:"خدمات مالية", yahoo:["DFM.AE"]},
+    {symbol:"AIRARABIA", ar:"العربية للطيران", name:"Air Arabia", market:"DFM", sector:"طيران", yahoo:["AIRARABIA.AE"]},
+    {symbol:"DU", ar:"دو", name:"du", market:"DFM", sector:"اتصالات", yahoo:["DU.AE"]},
+    {symbol:"SALIK", ar:"سالك", name:"Salik", market:"DFM", sector:"نقل", yahoo:["SALIK.AE"]},
+    {symbol:"TECOM", ar:"تيكوم", name:"TECOM Group", market:"DFM", sector:"عقار", yahoo:["TECOM.AE"]},
+    {symbol:"PARKIN", ar:"باركن", name:"Parkin", market:"DFM", sector:"نقل", yahoo:["PARKIN.AE"]},
+    {symbol:"TALABAT", ar:"طلبات", name:"Talabat", market:"DFM", sector:"تقنية", yahoo:["TALABAT.AE"]}
+  ];
+
+  function n(v, f = 0){ const x = Number(v); return Number.isFinite(x) ? x : f; }
+  function arr(v){ return Array.isArray(v) ? v : []; }
+  function money(v){ return WCUtils.money(n(v)); }
+  function today(){ return WCUtils.today ? WCUtils.today() : new Date().toISOString().slice(0,10); }
+  function id(){ return WCUtils.uid ? WCUtils.uid() : String(Date.now() + Math.random()); }
+  function el(id){ return document.getElementById(id); }
+  function val(id){ return el(id) ? String(el(id).value || "").trim() : ""; }
+
+  function ensure(data){
+    data.portfolio = arr(data.portfolio);
+    data.dividends = arr(data.dividends);
+    data.capitalContributions = arr(data.capitalContributions);
     return data;
   }
 
-  function n(v) {
-    return WCUtils.num(v);
+  function meta(symbol){
+    return UAE_STOCKS.find(x => x.symbol === symbol) || null;
   }
 
-  function uid() {
-    return WCUtils.uid ? WCUtils.uid() : String(Date.now() + Math.random());
-  }
+  function cost(x){ return n(x.quantity) * n(x.avgPrice); }
+  function value(x){ return n(x.quantity) * n(x.currentPrice || x.avgPrice); }
+  function pnl(x){ return value(x) - cost(x); }
+  function pnlPct(x){ return cost(x) > 0 ? pnl(x) / cost(x) * 100 : 0; }
 
-  function today() {
-    return WCUtils.today ? WCUtils.today() : new Date().toISOString().slice(0, 10);
-  }
-
-  function val(id) {
-    const el = document.getElementById(id);
-    return el ? el.value.trim() : "";
-  }
-
-  function money(v) {
-    return WCUtils.money(n(v));
-  }
-
-  function pct(v) {
-    return WCUtils.percent(n(v));
-  }
-
-  function stockCost(x) {
-    return n(x.quantity) * n(x.avgPrice);
-  }
-
-  function stockValue(x) {
-    return n(x.quantity) * n(x.currentPrice || x.avgPrice);
-  }
-
-  function stockPnl(x) {
-    return stockValue(x) - stockCost(x);
-  }
-
-  function stockPnlPct(x) {
-    const cost = stockCost(x);
-    return cost > 0 ? (stockPnl(x) / cost) * 100 : 0;
-  }
-
-  function stockDividends(data, symbolOrName) {
-    const key = String(symbolOrName || "").toLowerCase();
-    return (data.dividends || [])
-      .filter(d => {
-        const c = String(d.company || "").toLowerCase();
-        const s = String(d.symbol || "").toLowerCase();
-        return c === key || s === key;
-      })
-      .reduce((sum, d) => sum + n(d.amount), 0);
-  }
-
-  function calc(data) {
+  function calc(data){
     ensure(data);
 
     const stocks = data.portfolio;
-    const dividends = data.dividends;
-
-    const totalCost = stocks.reduce((s, x) => s + stockCost(x), 0);
-    const totalValue = stocks.reduce((s, x) => s + stockValue(x), 0);
+    const totalCost = stocks.reduce((s,x) => s + cost(x), 0);
+    const totalValue = stocks.reduce((s,x) => s + value(x), 0);
     const totalPnl = totalValue - totalCost;
-    const totalReturn = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
-    const totalDividends = dividends.reduce((s, x) => s + n(x.amount), 0);
-    const dividendYield = totalCost > 0 ? (totalDividends / totalCost) * 100 : 0;
+    const totalReturn = totalCost > 0 ? totalPnl / totalCost * 100 : 0;
 
-    const winners = stocks
-      .slice()
-      .sort((a, b) => stockPnl(b) - stockPnl(a));
+    const dividends = data.dividends.reduce((s,x) => s + n(x.amount), 0);
+    const capital = data.capitalContributions.reduce((s,x) => s + n(x.amount), 0);
 
-    const best = winners[0] || null;
-    const worst = winners.length ? winners[winners.length - 1] : null;
-
-    const markets = {};
     const sectors = {};
+    const markets = {};
 
     stocks.forEach(x => {
-      const market = x.market || "غير محدد";
-      const sector = x.sector || "غير محدد";
-      const value = stockValue(x);
-
-      markets[market] = (markets[market] || 0) + value;
-      sectors[sector] = (sectors[sector] || 0) + value;
+      sectors[x.sector || "غير محدد"] = (sectors[x.sector || "غير محدد"] || 0) + value(x);
+      markets[x.market || "غير محدد"] = (markets[x.market || "غير محدد"] || 0) + value(x);
     });
+
+    const sorted = stocks.slice().sort((a,b) => pnl(b) - pnl(a));
 
     return {
       stocks,
-      dividends,
       totalCost,
       totalValue,
       totalPnl,
       totalReturn,
-      totalDividends,
-      dividendYield,
-      best,
-      worst,
-      markets,
-      sectors
+      dividends,
+      capital,
+      monthlyProfit: totalValue + dividends - capital,
+      best: sorted[0],
+      worst: sorted[sorted.length - 1],
+      sectors,
+      markets
     };
   }
 
-  function filteredStocks(stocks) {
-    const q = state.query.toLowerCase();
+  async function fetchPrice(symbol){
+    const m = meta(symbol);
+    if (!m) return null;
+    if (state.prices[symbol]) return state.prices[symbol];
 
-    return stocks.filter(x => {
-      const matchQuery =
-        !q ||
-        String(x.name || "").toLowerCase().includes(q) ||
-        String(x.symbol || "").toLowerCase().includes(q) ||
-        String(x.sector || "").toLowerCase().includes(q) ||
-        String(x.market || "").toLowerCase().includes(q);
+    for (const y of m.yahoo || []) {
+      try {
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(y)}?range=5d&interval=1d`;
+        const res = await fetch(url);
+        if (!res.ok) continue;
 
-      const matchMarket = state.market === "all" || x.market === state.market;
-      const matchSector = state.sector === "all" || x.sector === state.sector;
+        const json = await res.json();
+        const r = json?.chart?.result?.[0];
+        const p = r?.meta?.regularMarketPrice || r?.meta?.previousClose;
 
-      return matchQuery && matchMarket && matchSector;
+        if (Number.isFinite(Number(p))) {
+          state.prices[symbol] = {
+            price: Number(p),
+            source: "Yahoo Finance",
+            at: new Date().toISOString()
+          };
+          return state.prices[symbol];
+        }
+      } catch(e){}
+    }
+
+    return null;
+  }
+
+  async function refreshAllPrices(){
+    const data = ensure(WCStore.get());
+    if (!data.portfolio.length) return alert("ما عندك أسهم حالياً.");
+
+    state.loading = true;
+    render();
+
+    for (const x of data.portfolio) {
+      const live = await fetchPrice(x.symbol);
+      if (live) {
+        x.currentPrice = live.price;
+        x.priceSource = live.source;
+        x.priceUpdatedAt = live.at;
+      }
+    }
+
+    WCStore.set(data);
+    state.loading = false;
+    render();
+  }
+
+  async function fetchNews(){
+    const data = ensure(WCStore.get());
+    const symbols = data.portfolio.map(x => x.symbol).slice(0,8);
+
+    if (!symbols.length) return alert("أضف أسهم أولاً عشان تظهر أخبارها.");
+
+    state.newsLoading = true;
+    render();
+
+    try{
+      const q = encodeURIComponent(symbols.join(" OR ") + " UAE stocks");
+      const rss = `https://news.google.com/rss/search?q=${q}&hl=en-AE&gl=AE&ceid=AE:en`;
+      const api = `https://api.allorigins.win/get?url=${encodeURIComponent(rss)}`;
+      const res = await fetch(api);
+      const json = await res.json();
+      const xml = new DOMParser().parseFromString(json.contents || "", "text/xml");
+
+      state.news = [...xml.querySelectorAll("item")].slice(0,8).map(item => ({
+        title:item.querySelector("title")?.textContent || "خبر",
+        link:item.querySelector("link")?.textContent || "#",
+        date:item.querySelector("pubDate")?.textContent || ""
+      }));
+    }catch(e){
+      state.news = [];
+      alert("الأخبار ما اشتغلت حالياً بسبب قيود المصدر.");
+    }
+
+    state.newsLoading = false;
+    render();
+  }
+
+  function filteredCatalog(){
+    const q = state.q.toLowerCase();
+    return UAE_STOCKS.filter(x => {
+      const txt = `${x.symbol} ${x.ar} ${x.name} ${x.market} ${x.sector}`.toLowerCase();
+      return (!q || txt.includes(q)) &&
+             (state.market === "all" || x.market === state.market) &&
+             (state.sector === "all" || x.sector === state.sector);
     });
   }
 
-  function unique(list, key) {
-    return [...new Set(list.map(x => x[key]).filter(Boolean))];
+  function filteredStocks(stocks){
+    const q = state.q.toLowerCase();
+    return stocks.filter(x => {
+      const txt = `${x.symbol} ${x.ar} ${x.name} ${x.market} ${x.sector}`.toLowerCase();
+      return (!q || txt.includes(q)) &&
+             (state.market === "all" || x.market === state.market) &&
+             (state.sector === "all" || x.sector === state.sector);
+    });
   }
 
-  function render() {
+  function unique(key){
+    return [...new Set(UAE_STOCKS.map(x => x[key]).filter(Boolean))];
+  }
+
+  function insight(c){
+    if (!c.stocks.length) return "أضف أول سهم من القائمة حتى يبدأ التحليل.";
+    if (c.totalPnl < 0) return `محفظتك حالياً خسرانة ${money(Math.abs(c.totalPnl))}. راقب الأسهم الضعيفة ولا تزيد التركيز بدون مراجعة.`;
+    if (c.totalReturn > 10) return `الأداء ممتاز بعائد ${c.totalReturn.toFixed(1)}%. راقب التوازن بين القطاعات وجني جزء من الأرباح عند الحاجة.`;
+    if (!c.dividends) return "المحفظة موجودة، لكن لا توجد توزيعات مسجلة. أضف التوزيعات لمتابعة الدخل السلبي.";
+    return `المحفظة مستقرة بعائد ${c.totalReturn.toFixed(1)}%. حدث الأسعار والأخبار بشكل دوري.`;
+  }
+
+  function render(){
     const data = ensure(WCStore.get());
     const c = calc(data);
     const stocks = filteredStocks(c.stocks);
+    const selectedMeta = meta(state.selected);
+    const selectedPrice = state.prices[state.selected];
 
     page.innerHTML = `
       ${WCUI.pageHero(
-        "المحفظة",
-        "إدارة الأسهم، التكلفة، القيمة الحالية، التوزيعات، الربح والخسارة، ونسبة كل شركة من المحفظة.",
-        "Portfolio"
+        "الاستثمارات",
+        "إدارة أسهم الإمارات، رأس المال، الشراء، التوزيعات، الأخبار، والتحليل الذكي.",
+        "Investments"
       )}
 
       ${WCUI.heroCard({
-        tag: "Portfolio Value",
-        title: money(c.totalValue),
-        desc: "إجمالي قيمة المحفظة الحالية",
-        value: `${c.totalPnl >= 0 ? "+" : ""}${money(c.totalPnl)}`,
-        sub: `العائد: ${pct(c.totalReturn)}`
+        tag:"Investments Value",
+        title:money(c.totalValue),
+        desc:"إجمالي قيمة الاستثمارات الحالية",
+        value:`${c.totalPnl >= 0 ? "+" : ""}${money(c.totalPnl)}`,
+        sub:`العائد: ${c.totalReturn.toFixed(1)}%`
       })}
 
       ${WCUI.statGrid([
-        { icon: "💵", label: "إجمالي التكلفة", value: money(c.totalCost) },
-        { icon: "📈", label: "القيمة الحالية", value: money(c.totalValue) },
-        { icon: c.totalPnl >= 0 ? "🟢" : "🔴", label: "الربح / الخسارة", value: money(c.totalPnl), type: c.totalPnl < 0 ? "danger" : "gold" },
-        { icon: "🏢", label: "عدد الشركات", value: String(c.stocks.length) },
-        { icon: "💸", label: "التوزيعات", value: money(c.totalDividends), type: "gold" },
-        { icon: "📊", label: "عائد التوزيعات", value: pct(c.dividendYield), type: "gold" }
+        {icon:"💼", label:"رأس المال", value:money(c.capital)},
+        {icon:"💵", label:"إجمالي التكلفة", value:money(c.totalCost)},
+        {icon:"📈", label:"القيمة الحالية", value:money(c.totalValue)},
+        {icon:c.totalPnl >= 0 ? "🟢" : "🔴", label:"الربح / الخسارة", value:money(c.totalPnl), type:c.totalPnl < 0 ? "danger" : "gold"},
+        {icon:"💸", label:"التوزيعات", value:money(c.dividends), type:"gold"},
+        {icon:"📊", label:"الربح مقابل رأس المال", value:money(c.monthlyProfit), type:c.monthlyProfit < 0 ? "danger" : "gold"}
       ])}
 
-      ${portfolioSummary(c)}
-      ${filters(c)}
-      ${stockForm(data)}
-      ${stockCards(data, stocks, c)}
-      ${dividendForm()}
-      ${dividendList(c)}
-      ${allocationCard("توزيع القطاعات", c.sectors, c.totalValue)}
-      ${allocationCard("توزيع الأسواق", c.markets, c.totalValue)}
-      ${WCUI.decision(portfolioInsight(c))}
-    `;
-  }
+      <section class="decisionCard">
+        <h3>🧠 التحليل الذكي</h3>
+        <p>${insight(c)}</p>
+      </section>
 
-  function portfolioSummary(c) {
-    return `
-      <div class="tableCard">
-        <h3>📌 ملخص المحفظة</h3>
-        <div class="stockList">
-          <div class="stockItem">
-            <strong>أفضل سهم</strong>
-            <small>${c.best ? `${c.best.name || c.best.symbol} • ${pct(stockPnlPct(c.best))}` : "لا يوجد"}</small>
-            <b>${c.best ? money(stockPnl(c.best)) : money(0)}</b>
-          </div>
-
-          <div class="stockItem">
-            <strong>أضعف سهم</strong>
-            <small>${c.worst ? `${c.worst.name || c.worst.symbol} • ${pct(stockPnlPct(c.worst))}` : "لا يوجد"}</small>
-            <b>${c.worst ? money(stockPnl(c.worst)) : money(0)}</b>
-          </div>
-
-          <div class="stockItem">
-            <strong>الدخل من التوزيعات</strong>
-            <small>إجمالي التوزيعات المسجلة</small>
-            <b>${money(c.totalDividends)}</b>
-          </div>
+      <section class="formCard">
+        <h3>💼 إضافة رأس مال</h3>
+        <div class="formGrid">
+          <input id="capitalAmount" type="number" inputmode="decimal" placeholder="مثال: 3000" />
+          <input id="capitalDate" type="date" value="${today()}" />
+          <input id="capitalNote" placeholder="مثال: استثمار شهر يوليو" />
         </div>
-      </div>
-    `;
-  }
+        <button class="mainBtn" onclick="PWC_Portfolio.addCapital()">حفظ رأس المال</button>
+      </section>
 
-  function filters(c) {
-    const markets = unique(c.stocks, "market");
-    const sectors = unique(c.stocks, "sector");
-
-    return `
-      <div class="formCard">
+      <section class="formCard">
         <h3>🔎 بحث وفلترة</h3>
         <div class="formGrid">
-          <input id="pfSearch" placeholder="ابحث باسم الشركة / الرمز / القطاع" value="${state.query}">
-          
+          <input id="pfSearch" value="${state.q}" placeholder="ابحث باسم الشركة / الرمز / القطاع" />
           <select id="pfMarketFilter">
             <option value="all">كل الأسواق</option>
-            ${markets.map(m => `<option value="${m}" ${state.market === m ? "selected" : ""}>${m}</option>`).join("")}
+            ${unique("market").map(x => `<option value="${x}" ${state.market === x ? "selected" : ""}>${x}</option>`).join("")}
           </select>
-
           <select id="pfSectorFilter">
             <option value="all">كل القطاعات</option>
-            ${sectors.map(s => `<option value="${s}" ${state.sector === s ? "selected" : ""}>${s}</option>`).join("")}
+            ${unique("sector").map(x => `<option value="${x}" ${state.sector === x ? "selected" : ""}>${x}</option>`).join("")}
           </select>
         </div>
-
         <button class="mainBtn" onclick="PWC_Portfolio.applyFilters()">تطبيق الفلترة</button>
-      </div>
-    `;
-  }
+      </section>
 
-  function stockForm(data) {
-    const edit = state.editingId
-      ? (data.portfolio || []).find(x => x.id === state.editingId)
-      : null;
-
-    return `
-      <div class="formCard">
-        <h3>${edit ? "✏️ تعديل سهم" : "➕ إضافة سهم"}</h3>
+      <section class="formCard">
+        <h3>➕ إضافة سهم من سوق الإمارات</h3>
 
         <div class="formGrid">
-          <input id="pfName" placeholder="اسم الشركة مثال: ADIB" value="${edit?.name || ""}">
-          <input id="pfSymbol" placeholder="الرمز مثال: ADIB" value="${edit?.symbol || ""}">
-          <input id="pfMarket" placeholder="السوق مثال: ADX / DFM / US" value="${edit?.market || ""}">
-          <input id="pfSector" placeholder="القطاع مثال: بنوك" value="${edit?.sector || ""}">
-          <input id="pfQty" type="number" step="0.01" placeholder="عدد الأسهم" value="${edit?.quantity || ""}">
-          <input id="pfAvg" type="number" step="0.01" placeholder="متوسط الشراء" value="${edit?.avgPrice || ""}">
-          <input id="pfPrice" type="number" step="0.01" placeholder="السعر الحالي" value="${edit?.currentPrice || ""}">
-          <input id="pfFee" type="number" step="0.01" placeholder="العمولة / الرسوم" value="${edit?.fees || ""}">
-          <input id="pfDate" type="date" value="${edit?.buyDate || today()}">
-          <input id="pfNote" placeholder="ملاحظة اختيارية" value="${edit?.note || ""}">
+          <select id="stockSelect" onchange="PWC_Portfolio.selectStock()">
+            <option value="">اختر السهم</option>
+            ${filteredCatalog().map(x => `
+              <option value="${x.symbol}" ${state.selected === x.symbol ? "selected" : ""}>
+                ${x.symbol} - ${x.ar} - ${x.market}
+              </option>
+            `).join("")}
+          </select>
+
+          <input id="stockQty" type="number" inputmode="decimal" placeholder="عدد الأسهم فقط" />
+          <input id="stockDate" type="date" value="${today()}" />
+          <input id="stockNote" placeholder="ملاحظة اختيارية" />
         </div>
 
-        <button class="mainBtn" onclick="PWC_Portfolio.saveStock()">
-          ${edit ? "حفظ التعديل" : "حفظ السهم"}
+        ${selectedMeta ? `
+          <div class="decisionCard">
+            <h3>${selectedMeta.ar} • ${selectedMeta.symbol}</h3>
+            <p>${selectedMeta.market} • ${selectedMeta.sector}</p>
+            <p>السعر الحالي: <b>${state.loading ? "جاري البحث..." : selectedPrice ? money(selectedPrice.price) : "غير متوفر حالياً"}</b></p>
+          </div>
+        ` : ""}
+
+        <button class="mainBtn" onclick="PWC_Portfolio.addStock()">حفظ السهم</button>
+      </section>
+
+      <section class="tableCard">
+        <h3>⚡ الأسعار والأخبار</h3>
+        <button class="mainBtn" onclick="PWC_Portfolio.refreshAllPrices()">
+          ${state.loading ? "جاري تحديث الأسعار..." : "تحديث أسعار أسهمي"}
         </button>
+        <br><br>
+        <button class="mainBtn" onclick="PWC_Portfolio.fetchNews()">
+          ${state.newsLoading ? "جاري جلب الأخبار..." : "جلب أخبار أسهمي"}
+        </button>
+      </section>
 
-        ${edit ? `<button class="miniBtn" style="margin-top:10px;width:100%;" onclick="PWC_Portfolio.cancelEdit()">إلغاء التعديل</button>` : ""}
-      </div>
+      ${newsBlock()}
+      ${summaryBlock(c)}
+      ${stocksBlock(stocks, c)}
+      ${dividendBlock()}
+      ${distributionBlock("توزيع القطاعات", c.sectors, c.totalValue)}
+      ${distributionBlock("توزيع الأسواق", c.markets, c.totalValue)}
     `;
   }
 
-  function stockCards(data, stocks, c) {
-    if (!stocks.length) {
-      return WCUI.empty("قائمة الأسهم", "لا توجد أسهم حالياً. أضف أول سهم عشان يبدأ التحليل.");
+  function newsBlock(){
+    if (!state.news.length) {
+      return `
+        <section class="emptyCard">
+          <h3>📰 أخبار أسهمي</h3>
+          <p>اضغط جلب أخبار أسهمي لعرض أخبار الشركات الموجودة في محفظتك.</p>
+        </section>
+      `;
     }
 
     return `
-      <div class="tableCard">
-        <h3>📋 الأسهم</h3>
+      <section class="tableCard">
+        <h3>📰 أخبار أسهمي</h3>
         <div class="stockList">
-          ${stocks.map(x => {
-            const cost = stockCost(x);
-            const value = stockValue(x);
-            const pnl = stockPnl(x);
-            const r = stockPnlPct(x);
-            const weight = c.totalValue > 0 ? (value / c.totalValue) * 100 : 0;
-            const divs = stockDividends(data, x.symbol || x.name);
-            const divYield = cost > 0 ? (divs / cost) * 100 : 0;
-
-            return `
-              <div class="tableCard" style="margin-bottom:14px;">
-                <h3>${x.name || x.symbol || "سهم"} ${pnl >= 0 ? "🟢" : "🔴"}</h3>
-
-                <div class="stockList">
-                  <div class="stockItem">
-                    <strong>الرمز / السوق</strong>
-                    <small>${x.symbol || "-"} • ${x.market || "غير محدد"}</small>
-                    <b>${x.sector || "غير مصنف"}</b>
-                  </div>
-
-                  <div class="stockItem">
-                    <strong>الكمية</strong>
-                    <small>متوسط الشراء ${n(x.avgPrice)}</small>
-                    <b>${n(x.quantity)}</b>
-                  </div>
-
-                  <div class="stockItem">
-                    <strong>القيمة الحالية</strong>
-                    <small>السعر الحالي ${n(x.currentPrice || x.avgPrice)}</small>
-                    <b>${money(value)}</b>
-                  </div>
-
-                  <div class="stockItem">
-                    <strong>الربح / الخسارة</strong>
-                    <small>${pct(r)} • وزن ${pct(weight)}</small>
-                    <b class="${pnl < 0 ? "danger" : "gold"}">${money(pnl)}</b>
-                  </div>
-
-                  <div class="stockItem">
-                    <strong>التوزيعات</strong>
-                    <small>عائد التوزيع ${pct(divYield)}</small>
-                    <b>${money(divs)}</b>
-                  </div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
-                  <button class="miniBtn" onclick="PWC_Portfolio.editStock('${x.id}')">✏️ تعديل</button>
-                  <button class="miniBtn dangerBtn" onclick="PWC_Portfolio.removeStock('${x.id}')">🗑 حذف</button>
-                </div>
-              </div>
-            `;
-          }).join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  function dividendForm() {
-    return `
-      <div class="formCard">
-        <h3>💸 إضافة توزيع</h3>
-        <div class="formGrid">
-          <input id="dvCompany" placeholder="الشركة / الرمز">
-          <input id="dvAmount" type="number" step="0.01" placeholder="قيمة التوزيع">
-          <input id="dvDate" type="date" value="${today()}">
-          <input id="dvNote" placeholder="ملاحظة اختيارية">
-        </div>
-        <button class="mainBtn" onclick="PWC_Portfolio.addDividend()">حفظ التوزيع</button>
-      </div>
-    `;
-  }
-
-  function dividendList(c) {
-    if (!c.dividends.length) {
-      return WCUI.empty("التوزيعات", "لا توجد توزيعات حالياً. أضف أول توزيع لمتابعة الدخل السلبي.");
-    }
-
-    return `
-      <div class="tableCard">
-        <h3>💸 سجل التوزيعات</h3>
-        <div class="stockList">
-          ${c.dividends.slice().reverse().map(x => `
+          ${state.news.map(x => `
             <div class="stockItem">
-              <strong>${x.company || "توزيع"}</strong>
-              <small>${x.date || "-"} • ${x.note || ""}</small>
-              <b>${money(x.amount)}</b>
-              <button class="miniBtn dangerBtn" onclick="PWC_Portfolio.removeDividend('${x.id}')">حذف</button>
+              <strong>${x.title}</strong>
+              <small>${x.date ? new Date(x.date).toLocaleDateString("ar-AE") : ""}</small>
+              <a class="miniBtn" href="${x.link}" target="_blank" rel="noopener">فتح</a>
             </div>
           `).join("")}
         </div>
-      </div>
+      </section>
     `;
   }
 
-  function allocationCard(title, obj, total) {
-    const rows = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
+  function summaryBlock(c){
+    return `
+      <section class="tableCard">
+        <h3>📌 ملخص الاستثمارات</h3>
+        <div class="stockList">
+          <div class="stockItem"><strong>أفضل سهم</strong><small>${c.best ? `${c.best.ar} • ${pnlPct(c.best).toFixed(1)}%` : "لا يوجد"}</small><b>${c.best ? money(pnl(c.best)) : money(0)}</b></div>
+          <div class="stockItem"><strong>أضعف سهم</strong><small>${c.worst ? `${c.worst.ar} • ${pnlPct(c.worst).toFixed(1)}%` : "لا يوجد"}</small><b>${c.worst ? money(pnl(c.worst)) : money(0)}</b></div>
+          <div class="stockItem"><strong>إجمالي رأس المال</strong><small>كل المبالغ التي أضفتها</small><b>${money(c.capital)}</b></div>
+        </div>
+      </section>
+    `;
+  }
 
-    if (!rows.length) {
-      return WCUI.empty(title, "لا توجد بيانات كافية لعرض التوزيع.");
+  function stocksBlock(stocks, c){
+    if (!stocks.length) {
+      return `<section class="emptyCard"><h3>📋 الأسهم</h3><p>لا توجد أسهم مطابقة.</p></section>`;
     }
 
     return `
-      <div class="tableCard">
-        <h3>📊 ${title}</h3>
-        <div class="stockList">
-          ${rows.map(([name, value]) => {
-            const p = total > 0 ? (value / total) * 100 : 0;
-            return `
-              <div>
-                <div class="stockItem">
-                  <strong>${name}</strong>
-                  <small>${money(value)}</small>
-                  <b>${pct(p)}</b>
-                </div>
-                <div class="progressBar" style="margin-top:8px;">
-                  <div class="progressFill" style="width:${Math.min(p, 100)}%"></div>
-                </div>
+      <section class="tableCard">
+        <h3>📋 الأسهم</h3>
+        ${stocks.map(x => {
+          const v = value(x);
+          const p = pnl(x);
+          const weight = c.totalValue > 0 ? v / c.totalValue * 100 : 0;
+
+          return `
+            <div class="formCard">
+              <h3>${p >= 0 ? "🟢" : "🔴"} ${x.ar || x.symbol}</h3>
+
+              <div class="stockList">
+                <div class="stockItem"><strong>الرمز / السوق</strong><small>${x.symbol} • ${x.market}</small><b>${x.sector}</b></div>
+                <div class="stockItem"><strong>الكمية</strong><small>متوسط الشراء ${n(x.avgPrice).toFixed(3)}</small><b>${n(x.quantity)}</b></div>
+                <div class="stockItem"><strong>القيمة الحالية</strong><small>السعر الحالي ${n(x.currentPrice).toFixed(3)}</small><b>${money(v)}</b></div>
+                <div class="stockItem"><strong>الربح / الخسارة</strong><small>${pnlPct(x).toFixed(1)}% • وزن ${weight.toFixed(1)}%</small><b>${money(p)}</b></div>
               </div>
-            `;
-          }).join("")}
-        </div>
-      </div>
+
+              <br>
+              <div class="formGrid">
+                <input id="moreQty_${x.id}" type="number" inputmode="decimal" placeholder="كم سهم اشتريت زيادة؟" />
+                <input id="moreDate_${x.id}" type="date" value="${today()}" />
+              </div>
+
+              <button class="miniBtn" onclick="PWC_Portfolio.addMore('${x.id}')">➕ إضافة شراء</button>
+              <button class="miniBtn" onclick="PWC_Portfolio.updateOne('${x.id}')">🔄 تحديث السعر</button>
+              <button class="miniBtn dangerBtn" onclick="PWC_Portfolio.removeStock('${x.id}')">🗑 حذف</button>
+            </div>
+          `;
+        }).join("")}
+      </section>
     `;
   }
 
-  function portfolioInsight(c) {
-    if (!c.stocks.length) return "ابدأ بإضافة أسهمك الحالية حتى تحصل على قراءة فعلية للمحفظة.";
-    if (c.totalValue <= 0) return "أضف الأسعار الحالية للأسهم حتى تظهر القيمة الفعلية.";
-    if (c.totalPnl < 0) return "المحفظة حالياً تحت التكلفة. راقب متوسط الشراء ولا تزيد التركيز في سهم واحد.";
-    if (c.totalDividends <= 0) return "المحفظة موجودة، لكن لم يتم تسجيل توزيعات بعد. أضف التوزيعات لمتابعة الدخل السلبي.";
-    return "المحفظة بدأت تعطي صورة أوضح. استمر بتحديث الأسعار والتوزيعات بشكل دوري.";
+  function dividendBlock(){
+    const data = ensure(WCStore.get());
+
+    return `
+      <section class="formCard">
+        <h3>💸 إضافة توزيع</h3>
+        <div class="formGrid">
+          <select id="divSymbol">
+            <option value="">اختر الشركة</option>
+            ${data.portfolio.map(x => `<option value="${x.symbol}">${x.symbol} - ${x.ar}</option>`).join("")}
+          </select>
+          <input id="divAmount" type="number" inputmode="decimal" placeholder="قيمة التوزيع" />
+          <input id="divDate" type="date" value="${today()}" />
+          <input id="divNote" placeholder="ملاحظة اختيارية" />
+        </div>
+        <button class="mainBtn" onclick="PWC_Portfolio.addDividend()">حفظ التوزيع</button>
+      </section>
+    `;
   }
 
-  function saveStock() {
-    const name = val("pfName");
-    const symbol = val("pfSymbol");
-    const market = val("pfMarket");
-    const sector = val("pfSector");
-    const quantity = n(val("pfQty"));
-    const avgPrice = n(val("pfAvg"));
-    const currentPrice = n(val("pfPrice"));
-    const fees = n(val("pfFee"));
-    const buyDate = val("pfDate") || today();
-    const note = val("pfNote");
+  function distributionBlock(title, obj, total){
+    const rows = Object.entries(obj || {}).sort((a,b) => b[1] - a[1]);
 
-    if (!name && !symbol) return alert("دخل اسم الشركة أو الرمز.");
-    if (quantity <= 0) return alert("دخل عدد الأسهم.");
-    if (avgPrice <= 0) return alert("دخل متوسط الشراء.");
+    if (!rows.length) return "";
 
-    WCStore.update(data => {
-      ensure(data);
-
-      const item = {
-        id: state.editingId || uid(),
-        name,
-        symbol,
-        market,
-        sector,
-        quantity,
-        avgPrice,
-        currentPrice: currentPrice || avgPrice,
-        fees,
-        buyDate,
-        note,
-        updatedAt: today()
-      };
-
-      if (state.editingId) {
-        data.portfolio = data.portfolio.map(x => x.id === state.editingId ? item : x);
-      } else {
-        item.createdAt = today();
-        data.portfolio.push(item);
-      }
-    });
-
-    state.editingId = null;
+    return `
+      <section class="tableCard">
+        <h3>📊 ${title}</h3>
+        ${rows.map(([name, amount]) => {
+          const p = total > 0 ? amount / total * 100 : 0;
+          return `
+            <div class="stockItem"><strong>${name}</strong><small>${money(amount)}</small><b>${p.toFixed(1)}%</b></div>
+            <div class="progressBar"><div class="progressFill" style="width:${Math.min(p,100)}%"></div></div>
+          `;
+        }).join("")}
+      </section>
+    `;
   }
 
-  function editStock(id) {
-    state.editingId = id;
-    render();
-    setTimeout(() => {
-      const input = document.getElementById("pfName");
-      if (input) input.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-  }
-
-  function cancelEdit() {
-    state.editingId = null;
-    render();
-  }
-
-  function removeStock(id) {
-    if (!confirm("حذف السهم؟")) return;
-
-    WCStore.update(data => {
-      ensure(data);
-      data.portfolio = data.portfolio.filter(x => x.id !== id);
-    });
-  }
-
-  function addDividend() {
-    const company = val("dvCompany");
-    const amount = n(val("dvAmount"));
-    const date = val("dvDate") || today();
-    const note = val("dvNote");
-
-    if (!company) return alert("دخل اسم الشركة أو الرمز.");
-    if (amount <= 0) return alert("دخل قيمة التوزيع.");
-
-    WCStore.update(data => {
-      ensure(data);
-      data.dividends.push({
-        id: uid(),
-        company,
-        symbol: company,
-        amount,
-        date,
-        note,
-        createdAt: today()
-      });
-    });
-  }
-
-  function removeDividend(id) {
-    if (!confirm("حذف التوزيع؟")) return;
-
-    WCStore.update(data => {
-      ensure(data);
-      data.dividends = data.dividends.filter(x => x.id !== id);
-    });
-  }
-
-  function applyFilters() {
-    state.query = val("pfSearch");
+  function applyFilters(){
+    state.q = val("pfSearch");
     state.market = val("pfMarketFilter") || "all";
     state.sector = val("pfSectorFilter") || "all";
     render();
   }
 
+  async function selectStock(){
+    state.selected = val("stockSelect");
+    if (!state.selected) return render();
+
+    state.loading = true;
+    render();
+
+    await fetchPrice(state.selected);
+
+    state.loading = false;
+    render();
+  }
+
+  async function addStock(){
+    const symbol = val("stockSelect");
+    const quantity = n(val("stockQty"));
+    const date = val("stockDate") || today();
+    const note = val("stockNote");
+
+    if (!symbol) return alert("اختر السهم.");
+    if (quantity <= 0) return alert("دخل عدد الأسهم.");
+
+    const m = meta(symbol);
+    const live = await fetchPrice(symbol);
+
+    if (!live) return alert("ما قدرت أجيب سعر السهم أونلاين حالياً.");
+
+    WCStore.update(data => {
+      ensure(data);
+
+      const existing = data.portfolio.find(x => x.symbol === symbol);
+      const price = live.price;
+
+      if (existing) {
+        const oldQty = n(existing.quantity);
+        const oldCost = oldQty * n(existing.avgPrice);
+        const newQty = oldQty + quantity;
+        existing.quantity = newQty;
+        existing.avgPrice = (oldCost + quantity * price) / newQty;
+        existing.currentPrice = price;
+        existing.priceUpdatedAt = live.at;
+        existing.transactions = arr(existing.transactions);
+        existing.transactions.push({id:id(), type:"buy", quantity, price, date, note});
+      } else {
+        data.portfolio.push({
+          id:id(),
+          symbol,
+          ar:m.ar,
+          name:m.name,
+          market:m.market,
+          sector:m.sector,
+          quantity,
+          avgPrice:price,
+          currentPrice:price,
+          priceSource:live.source,
+          priceUpdatedAt:live.at,
+          transactions:[{id:id(), type:"buy", quantity, price, date, note}],
+          createdAt:today()
+        });
+      }
+    });
+
+    state.selected = "";
+    render();
+  }
+
+  async function addMore(stockId){
+    const data = ensure(WCStore.get());
+    const x = data.portfolio.find(s => s.id === stockId);
+    if (!x) return;
+
+    const quantity = n(val(`moreQty_${stockId}`));
+    const date = val(`moreDate_${stockId}`) || today();
+
+    if (quantity <= 0) return alert("دخل كمية الشراء.");
+
+    const live = await fetchPrice(x.symbol);
+    if (!live) return alert("ما قدرت أجيب السعر الحالي.");
+
+    const oldQty = n(x.quantity);
+    const oldCost = oldQty * n(x.avgPrice);
+    const newQty = oldQty + quantity;
+
+    x.quantity = newQty;
+    x.avgPrice = (oldCost + quantity * live.price) / newQty;
+    x.currentPrice = live.price;
+    x.priceUpdatedAt = live.at;
+    x.transactions = arr(x.transactions);
+    x.transactions.push({id:id(), type:"buy", quantity, price:live.price, date});
+
+    WCStore.set(data);
+  }
+
+  async function updateOne(stockId){
+    const data = ensure(WCStore.get());
+    const x = data.portfolio.find(s => s.id === stockId);
+    if (!x) return;
+
+    const live = await fetchPrice(x.symbol);
+    if (!live) return alert("ما قدرت أجيب السعر الحالي.");
+
+    x.currentPrice = live.price;
+    x.priceUpdatedAt = live.at;
+    WCStore.set(data);
+  }
+
+  function removeStock(stockId){
+    if (!confirm("حذف السهم؟")) return;
+    WCStore.update(data => {
+      ensure(data);
+      data.portfolio = data.portfolio.filter(x => x.id !== stockId);
+    });
+  }
+
+  function addDividend(){
+    const symbol = val("divSymbol");
+    const amount = n(val("divAmount"));
+    if (!symbol || amount <= 0) return alert("اختر الشركة ودخل قيمة التوزيع.");
+
+    WCStore.update(data => {
+      ensure(data);
+      data.dividends.push({
+        id:id(),
+        symbol,
+        amount,
+        date:val("divDate") || today(),
+        note:val("divNote"),
+        createdAt:today()
+      });
+    });
+  }
+
+  function addCapital(){
+    const amount = n(val("capitalAmount"));
+    if (amount <= 0) return alert("دخل مبلغ رأس المال.");
+
+    WCStore.update(data => {
+      ensure(data);
+      data.capitalContributions.push({
+        id:id(),
+        amount,
+        date:val("capitalDate") || today(),
+        note:val("capitalNote"),
+        createdAt:today()
+      });
+    });
+  }
+
   window.PWC_Portfolio = {
-    saveStock,
-    editStock,
-    cancelEdit,
+    applyFilters,
+    selectStock,
+    addStock,
+    addMore,
+    updateOne,
     removeStock,
     addDividend,
-    removeDividend,
-    applyFilters
+    addCapital,
+    refreshAllPrices,
+    fetchNews
   };
 
   WCEvents.on("dataChanged", render);
