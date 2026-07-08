@@ -1,8 +1,8 @@
 /* ==========================================================
    Personal Wealth Center
-   Investments Center V2.1
+   Investments Center V2.2
    File: js/portfolio.js
-   UAE Stocks / Smart Add / Auto Price / News / Capital
+   Clean Layout / UAE Stocks / Smart Add / Capital / News
 ========================================================== */
 
 "use strict";
@@ -52,13 +52,36 @@
     {symbol:"TALABAT", ar:"طلبات", name:"Talabat", market:"DFM", sector:"تقنية", yahoo:["TALABAT.AE"]}
   ];
 
-  function n(v, f = 0){ const x = Number(v); return Number.isFinite(x) ? x : f; }
-  function arr(v){ return Array.isArray(v) ? v : []; }
-  function money(v){ return WCUtils.money(n(v)); }
-  function today(){ return WCUtils.today ? WCUtils.today() : new Date().toISOString().slice(0,10); }
-  function id(){ return WCUtils.uid ? WCUtils.uid() : String(Date.now() + Math.random()); }
-  function el(id){ return document.getElementById(id); }
-  function val(id){ return el(id) ? String(el(id).value || "").trim() : ""; }
+  injectInvestmentCSS();
+
+  function n(v, f = 0){
+    const x = Number(v);
+    return Number.isFinite(x) ? x : f;
+  }
+
+  function arr(v){
+    return Array.isArray(v) ? v : [];
+  }
+
+  function money(v){
+    return WCUtils.money(n(v));
+  }
+
+  function today(){
+    return WCUtils.today ? WCUtils.today() : new Date().toISOString().slice(0,10);
+  }
+
+  function id(){
+    return WCUtils.uid ? WCUtils.uid() : String(Date.now() + Math.random());
+  }
+
+  function el(id){
+    return document.getElementById(id);
+  }
+
+  function val(id){
+    return el(id) ? String(el(id).value || "").trim() : "";
+  }
 
   function ensure(data){
     data.portfolio = arr(data.portfolio);
@@ -71,10 +94,21 @@
     return UAE_STOCKS.find(x => x.symbol === symbol) || null;
   }
 
-  function cost(x){ return n(x.quantity) * n(x.avgPrice); }
-  function value(x){ return n(x.quantity) * n(x.currentPrice || x.avgPrice); }
-  function pnl(x){ return value(x) - cost(x); }
-  function pnlPct(x){ return cost(x) > 0 ? pnl(x) / cost(x) * 100 : 0; }
+  function cost(x){
+    return n(x.quantity) * n(x.avgPrice);
+  }
+
+  function value(x){
+    return n(x.quantity) * n(x.currentPrice || x.avgPrice);
+  }
+
+  function pnl(x){
+    return value(x) - cost(x);
+  }
+
+  function pnlPct(x){
+    return cost(x) > 0 ? pnl(x) / cost(x) * 100 : 0;
+  }
 
   function calc(data){
     ensure(data);
@@ -84,7 +118,6 @@
     const totalValue = stocks.reduce((s,x) => s + value(x), 0);
     const totalPnl = totalValue - totalCost;
     const totalReturn = totalCost > 0 ? totalPnl / totalCost * 100 : 0;
-
     const dividends = data.dividends.reduce((s,x) => s + n(x.amount), 0);
     const capital = data.capitalContributions.reduce((s,x) => s + n(x.amount), 0);
 
@@ -106,7 +139,7 @@
       totalReturn,
       dividends,
       capital,
-      monthlyProfit: totalValue + dividends - capital,
+      capitalDiff: totalValue + dividends - capital,
       best: sorted[0],
       worst: sorted[sorted.length - 1],
       sectors,
@@ -208,7 +241,7 @@
   function filteredStocks(stocks){
     const q = state.q.toLowerCase();
     return stocks.filter(x => {
-      const txt = `${x.symbol} ${x.ar} ${x.name} ${x.market} ${x.sector}`.toLowerCase();
+      const txt = `${x.symbol} ${x.ar || ""} ${x.name || ""} ${x.market || ""} ${x.sector || ""}`.toLowerCase();
       return (!q || txt.includes(q)) &&
              (state.market === "all" || x.market === state.market) &&
              (state.sector === "all" || x.sector === state.sector);
@@ -220,9 +253,9 @@
   }
 
   function insight(c){
-    if (!c.stocks.length) return "أضف أول سهم من القائمة حتى يبدأ التحليل.";
+    if (!c.stocks.length) return "أضف أول سهم من القائمة حتى يبدأ التحليل الحقيقي للمحفظة.";
     if (c.totalPnl < 0) return `محفظتك حالياً خسرانة ${money(Math.abs(c.totalPnl))}. راقب الأسهم الضعيفة ولا تزيد التركيز بدون مراجعة.`;
-    if (c.totalReturn > 10) return `الأداء ممتاز بعائد ${c.totalReturn.toFixed(1)}%. راقب التوازن بين القطاعات وجني جزء من الأرباح عند الحاجة.`;
+    if (c.totalReturn > 10) return `الأداء ممتاز بعائد ${c.totalReturn.toFixed(1)}%. راقب التوازن بين القطاعات ولا تركز كل المحفظة في سهم واحد.`;
     if (!c.dividends) return "المحفظة موجودة، لكن لا توجد توزيعات مسجلة. أضف التوزيعات لمتابعة الدخل السلبي.";
     return `المحفظة مستقرة بعائد ${c.totalReturn.toFixed(1)}%. حدث الأسعار والأخبار بشكل دوري.`;
   }
@@ -235,14 +268,14 @@
     const selectedPrice = state.prices[state.selected];
 
     page.innerHTML = `
-      ${WCUI.pageHero(
-        "الاستثمارات",
-        "إدارة أسهم الإمارات، رأس المال، الشراء، التوزيعات، الأخبار، والتحليل الذكي.",
-        "Investments"
-      )}
+      <section class="investPageTitle">
+        <span>الاستثمارات</span>
+        <h2>مركز الاستثمارات</h2>
+        <p>إدارة أسهم الإمارات، رأس المال، التوزيعات، الأسعار، والأخبار في مكان واحد.</p>
+      </section>
 
       ${WCUI.heroCard({
-        tag:"Investments Value",
+        tag:"قيمة الاستثمارات",
         title:money(c.totalValue),
         desc:"إجمالي قيمة الاستثمارات الحالية",
         value:`${c.totalPnl >= 0 ? "+" : ""}${money(c.totalPnl)}`,
@@ -255,27 +288,43 @@
         {icon:"📈", label:"القيمة الحالية", value:money(c.totalValue)},
         {icon:c.totalPnl >= 0 ? "🟢" : "🔴", label:"الربح / الخسارة", value:money(c.totalPnl), type:c.totalPnl < 0 ? "danger" : "gold"},
         {icon:"💸", label:"التوزيعات", value:money(c.dividends), type:"gold"},
-        {icon:"📊", label:"الربح مقابل رأس المال", value:money(c.monthlyProfit), type:c.monthlyProfit < 0 ? "danger" : "gold"}
+        {icon:"📊", label:"مقابل رأس المال", value:money(c.capitalDiff), type:c.capitalDiff < 0 ? "danger" : "gold"}
       ])}
 
-      <section class="decisionCard">
-        <h3>🧠 التحليل الذكي</h3>
+      <section class="investInsight">
+        <h3>🧠 القراءة الذكية</h3>
         <p>${insight(c)}</p>
       </section>
 
-      <section class="formCard">
-        <h3>💼 إضافة رأس مال</h3>
-        <div class="formGrid">
-          <input id="capitalAmount" type="number" inputmode="decimal" placeholder="مثال: 3000" />
-          <input id="capitalDate" type="date" value="${today()}" />
-          <input id="capitalNote" placeholder="مثال: استثمار شهر يوليو" />
+      <section class="investQuickGrid">
+        <button onclick="PWC_Portfolio.scrollToBox('capitalBox')">💼 رأس مال</button>
+        <button onclick="PWC_Portfolio.scrollToBox('addStockBox')">➕ إضافة سهم</button>
+        <button onclick="PWC_Portfolio.scrollToBox('dividendBox')">💸 توزيع</button>
+        <button onclick="PWC_Portfolio.refreshAllPrices()">⚡ تحديث الأسعار</button>
+      </section>
+
+      <section id="capitalBox" class="investPanel">
+        <div class="investPanelHead">
+          <h3>💼 إضافة رأس مال</h3>
+          <p>سجل المبلغ الذي خصصته للاستثمار، مثل استثمار شهري جديد.</p>
         </div>
+
+        <div class="investForm">
+          <input id="capitalAmount" type="number" inputmode="decimal" placeholder="المبلغ مثال: 3000" />
+          <input id="capitalDate" class="cleanDateInput" type="date" value="${today()}" />
+          <input id="capitalNote" placeholder="ملاحظة مثال: استثمار شهر يوليو" />
+        </div>
+
         <button class="mainBtn" onclick="PWC_Portfolio.addCapital()">حفظ رأس المال</button>
       </section>
 
-      <section class="formCard">
-        <h3>🔎 بحث وفلترة</h3>
-        <div class="formGrid">
+      <section class="investPanel">
+        <div class="investPanelHead">
+          <h3>🔎 بحث وفلترة</h3>
+          <p>فلتر محفظتك أو قائمة الأسهم حسب السوق والقطاع.</p>
+        </div>
+
+        <div class="investForm">
           <input id="pfSearch" value="${state.q}" placeholder="ابحث باسم الشركة / الرمز / القطاع" />
           <select id="pfMarketFilter">
             <option value="all">كل الأسواق</option>
@@ -286,13 +335,17 @@
             ${unique("sector").map(x => `<option value="${x}" ${state.sector === x ? "selected" : ""}>${x}</option>`).join("")}
           </select>
         </div>
+
         <button class="mainBtn" onclick="PWC_Portfolio.applyFilters()">تطبيق الفلترة</button>
       </section>
 
-      <section class="formCard">
-        <h3>➕ إضافة سهم من سوق الإمارات</h3>
+      <section id="addStockBox" class="investPanel">
+        <div class="investPanelHead">
+          <h3>➕ إضافة سهم إماراتي</h3>
+          <p>اختر السهم واكتب عدد الأسهم فقط. السعر يحاول النظام جلبه تلقائياً.</p>
+        </div>
 
-        <div class="formGrid">
+        <div class="investForm">
           <select id="stockSelect" onchange="PWC_Portfolio.selectStock()">
             <option value="">اختر السهم</option>
             ${filteredCatalog().map(x => `
@@ -303,30 +356,35 @@
           </select>
 
           <input id="stockQty" type="number" inputmode="decimal" placeholder="عدد الأسهم فقط" />
-          <input id="stockDate" type="date" value="${today()}" />
+          <input id="stockDate" class="cleanDateInput" type="date" value="${today()}" />
           <input id="stockNote" placeholder="ملاحظة اختيارية" />
         </div>
 
         ${selectedMeta ? `
-          <div class="decisionCard">
-            <h3>${selectedMeta.ar} • ${selectedMeta.symbol}</h3>
-            <p>${selectedMeta.market} • ${selectedMeta.sector}</p>
-            <p>السعر الحالي: <b>${state.loading ? "جاري البحث..." : selectedPrice ? money(selectedPrice.price) : "غير متوفر حالياً"}</b></p>
+          <div class="selectedStockBox">
+            <strong>${selectedMeta.ar}</strong>
+            <span>${selectedMeta.symbol} • ${selectedMeta.market} • ${selectedMeta.sector}</span>
+            <b>${state.loading ? "جاري جلب السعر..." : selectedPrice ? money(selectedPrice.price) : "السعر غير متوفر حالياً"}</b>
           </div>
         ` : ""}
 
         <button class="mainBtn" onclick="PWC_Portfolio.addStock()">حفظ السهم</button>
       </section>
 
-      <section class="tableCard">
-        <h3>⚡ الأسعار والأخبار</h3>
-        <button class="mainBtn" onclick="PWC_Portfolio.refreshAllPrices()">
-          ${state.loading ? "جاري تحديث الأسعار..." : "تحديث أسعار أسهمي"}
-        </button>
-        <br><br>
-        <button class="mainBtn" onclick="PWC_Portfolio.fetchNews()">
-          ${state.newsLoading ? "جاري جلب الأخبار..." : "جلب أخبار أسهمي"}
-        </button>
+      <section class="investPanel">
+        <div class="investPanelHead">
+          <h3>⚡ الأسعار والأخبار</h3>
+          <p>حدث أسعار الأسهم أو اجلب آخر الأخبار المتعلقة بشركات محفظتك.</p>
+        </div>
+
+        <div class="investActionGrid">
+          <button onclick="PWC_Portfolio.refreshAllPrices()">
+            ${state.loading ? "جاري التحديث..." : "تحديث أسعار أسهمي"}
+          </button>
+          <button onclick="PWC_Portfolio.fetchNews()">
+            ${state.newsLoading ? "جاري الجلب..." : "جلب أخبار أسهمي"}
+          </button>
+        </div>
       </section>
 
       ${newsBlock()}
@@ -341,22 +399,29 @@
   function newsBlock(){
     if (!state.news.length) {
       return `
-        <section class="emptyCard">
-          <h3>📰 أخبار أسهمي</h3>
-          <p>اضغط جلب أخبار أسهمي لعرض أخبار الشركات الموجودة في محفظتك.</p>
+        <section class="investPanel">
+          <div class="investPanelHead">
+            <h3>📰 أخبار أسهمي</h3>
+            <p>اضغط زر جلب الأخبار لعرض أخبار الشركات الموجودة في محفظتك.</p>
+          </div>
         </section>
       `;
     }
 
     return `
-      <section class="tableCard">
-        <h3>📰 أخبار أسهمي</h3>
-        <div class="stockList">
+      <section class="investPanel">
+        <div class="investPanelHead">
+          <h3>📰 أخبار أسهمي</h3>
+        </div>
+
+        <div class="investList">
           ${state.news.map(x => `
-            <div class="stockItem">
-              <strong>${x.title}</strong>
-              <small>${x.date ? new Date(x.date).toLocaleDateString("ar-AE") : ""}</small>
-              <a class="miniBtn" href="${x.link}" target="_blank" rel="noopener">فتح</a>
+            <div class="investRow">
+              <div>
+                <strong>${x.title}</strong>
+                <span>${x.date ? new Date(x.date).toLocaleDateString("ar-AE") : ""}</span>
+              </div>
+              <a href="${x.link}" target="_blank" rel="noopener">فتح</a>
             </div>
           `).join("")}
         </div>
@@ -366,12 +431,26 @@
 
   function summaryBlock(c){
     return `
-      <section class="tableCard">
-        <h3>📌 ملخص الاستثمارات</h3>
-        <div class="stockList">
-          <div class="stockItem"><strong>أفضل سهم</strong><small>${c.best ? `${c.best.ar} • ${pnlPct(c.best).toFixed(1)}%` : "لا يوجد"}</small><b>${c.best ? money(pnl(c.best)) : money(0)}</b></div>
-          <div class="stockItem"><strong>أضعف سهم</strong><small>${c.worst ? `${c.worst.ar} • ${pnlPct(c.worst).toFixed(1)}%` : "لا يوجد"}</small><b>${c.worst ? money(pnl(c.worst)) : money(0)}</b></div>
-          <div class="stockItem"><strong>إجمالي رأس المال</strong><small>كل المبالغ التي أضفتها</small><b>${money(c.capital)}</b></div>
+      <section class="investPanel">
+        <div class="investPanelHead">
+          <h3>📌 ملخص الاستثمارات</h3>
+        </div>
+
+        <div class="investList">
+          <div class="investRow">
+            <div><strong>أفضل سهم</strong><span>${c.best ? `${c.best.ar || c.best.symbol} • ${pnlPct(c.best).toFixed(1)}%` : "لا يوجد"}</span></div>
+            <b>${c.best ? money(pnl(c.best)) : money(0)}</b>
+          </div>
+
+          <div class="investRow">
+            <div><strong>أضعف سهم</strong><span>${c.worst ? `${c.worst.ar || c.worst.symbol} • ${pnlPct(c.worst).toFixed(1)}%` : "لا يوجد"}</span></div>
+            <b>${c.worst ? money(pnl(c.worst)) : money(0)}</b>
+          </div>
+
+          <div class="investRow">
+            <div><strong>إجمالي رأس المال</strong><span>كل المبالغ التي أضفتها</span></div>
+            <b>${money(c.capital)}</b>
+          </div>
         </div>
       </section>
     `;
@@ -379,37 +458,56 @@
 
   function stocksBlock(stocks, c){
     if (!stocks.length) {
-      return `<section class="emptyCard"><h3>📋 الأسهم</h3><p>لا توجد أسهم مطابقة.</p></section>`;
+      return `
+        <section class="investPanel">
+          <div class="investPanelHead">
+            <h3>📋 الأسهم</h3>
+            <p>لا توجد أسهم مطابقة حالياً.</p>
+          </div>
+        </section>
+      `;
     }
 
     return `
-      <section class="tableCard">
-        <h3>📋 الأسهم</h3>
+      <section class="investPanel">
+        <div class="investPanelHead">
+          <h3>📋 الأسهم</h3>
+          <p>كل سهم مع الكمية، السعر، الربح، الوزن، والتحديث.</p>
+        </div>
+
         ${stocks.map(x => {
           const v = value(x);
           const p = pnl(x);
           const weight = c.totalValue > 0 ? v / c.totalValue * 100 : 0;
 
           return `
-            <div class="formCard">
-              <h3>${p >= 0 ? "🟢" : "🔴"} ${x.ar || x.symbol}</h3>
-
-              <div class="stockList">
-                <div class="stockItem"><strong>الرمز / السوق</strong><small>${x.symbol} • ${x.market}</small><b>${x.sector}</b></div>
-                <div class="stockItem"><strong>الكمية</strong><small>متوسط الشراء ${n(x.avgPrice).toFixed(3)}</small><b>${n(x.quantity)}</b></div>
-                <div class="stockItem"><strong>القيمة الحالية</strong><small>السعر الحالي ${n(x.currentPrice).toFixed(3)}</small><b>${money(v)}</b></div>
-                <div class="stockItem"><strong>الربح / الخسارة</strong><small>${pnlPct(x).toFixed(1)}% • وزن ${weight.toFixed(1)}%</small><b>${money(p)}</b></div>
+            <div class="stockCardV2">
+              <div class="stockHeaderV2">
+                <h3>${p >= 0 ? "🟢" : "🔴"} ${x.ar || x.symbol}</h3>
+                <span>${x.symbol} • ${x.market}</span>
               </div>
 
-              <br>
-              <div class="formGrid">
+              <div class="stockMiniGrid">
+                <div><small>القطاع</small><strong>${x.sector || "-"}</strong></div>
+                <div><small>الكمية</small><strong>${n(x.quantity)}</strong></div>
+                <div><small>متوسط الشراء</small><strong>${n(x.avgPrice).toFixed(3)}</strong></div>
+                <div><small>السعر الحالي</small><strong>${n(x.currentPrice).toFixed(3)}</strong></div>
+                <div><small>القيمة</small><strong>${money(v)}</strong></div>
+                <div><small>الربح / الخسارة</small><strong class="${p < 0 ? "lossText" : "gainText"}">${money(p)}</strong></div>
+              </div>
+
+              <p class="stockNoteLine">العائد ${pnlPct(x).toFixed(1)}% • الوزن من المحفظة ${weight.toFixed(1)}%</p>
+
+              <div class="stockBuyMore">
                 <input id="moreQty_${x.id}" type="number" inputmode="decimal" placeholder="كم سهم اشتريت زيادة؟" />
-                <input id="moreDate_${x.id}" type="date" value="${today()}" />
+                <input id="moreDate_${x.id}" class="cleanDateInput" type="date" value="${today()}" />
               </div>
 
-              <button class="miniBtn" onclick="PWC_Portfolio.addMore('${x.id}')">➕ إضافة شراء</button>
-              <button class="miniBtn" onclick="PWC_Portfolio.updateOne('${x.id}')">🔄 تحديث السعر</button>
-              <button class="miniBtn dangerBtn" onclick="PWC_Portfolio.removeStock('${x.id}')">🗑 حذف</button>
+              <div class="stockBtnGrid">
+                <button onclick="PWC_Portfolio.addMore('${x.id}')">➕ شراء إضافي</button>
+                <button onclick="PWC_Portfolio.updateOne('${x.id}')">🔄 تحديث</button>
+                <button class="dangerBtn" onclick="PWC_Portfolio.removeStock('${x.id}')">🗑 حذف</button>
+              </div>
             </div>
           `;
         }).join("")}
@@ -421,17 +519,23 @@
     const data = ensure(WCStore.get());
 
     return `
-      <section class="formCard">
-        <h3>💸 إضافة توزيع</h3>
-        <div class="formGrid">
+      <section id="dividendBox" class="investPanel">
+        <div class="investPanelHead">
+          <h3>💸 إضافة توزيع</h3>
+          <p>سجل توزيعات الأرباح للشركات الموجودة في محفظتك.</p>
+        </div>
+
+        <div class="investForm">
           <select id="divSymbol">
             <option value="">اختر الشركة</option>
-            ${data.portfolio.map(x => `<option value="${x.symbol}">${x.symbol} - ${x.ar}</option>`).join("")}
+            ${data.portfolio.map(x => `<option value="${x.symbol}">${x.symbol} - ${x.ar || x.name || ""}</option>`).join("")}
           </select>
+
           <input id="divAmount" type="number" inputmode="decimal" placeholder="قيمة التوزيع" />
-          <input id="divDate" type="date" value="${today()}" />
+          <input id="divDate" class="cleanDateInput" type="date" value="${today()}" />
           <input id="divNote" placeholder="ملاحظة اختيارية" />
         </div>
+
         <button class="mainBtn" onclick="PWC_Portfolio.addDividend()">حفظ التوزيع</button>
       </section>
     `;
@@ -439,19 +543,29 @@
 
   function distributionBlock(title, obj, total){
     const rows = Object.entries(obj || {}).sort((a,b) => b[1] - a[1]);
-
     if (!rows.length) return "";
 
     return `
-      <section class="tableCard">
-        <h3>📊 ${title}</h3>
-        ${rows.map(([name, amount]) => {
-          const p = total > 0 ? amount / total * 100 : 0;
-          return `
-            <div class="stockItem"><strong>${name}</strong><small>${money(amount)}</small><b>${p.toFixed(1)}%</b></div>
-            <div class="progressBar"><div class="progressFill" style="width:${Math.min(p,100)}%"></div></div>
-          `;
-        }).join("")}
+      <section class="investPanel">
+        <div class="investPanelHead">
+          <h3>📊 ${title}</h3>
+        </div>
+
+        <div class="investDistList">
+          ${rows.map(([name, amount]) => {
+            const p = total > 0 ? amount / total * 100 : 0;
+            return `
+              <div class="distRow">
+                <div>
+                  <strong>${name}</strong>
+                  <span>${money(amount)}</span>
+                </div>
+                <b>${p.toFixed(1)}%</b>
+              </div>
+              <div class="progressBar"><div class="progressFill" style="width:${Math.min(p,100)}%"></div></div>
+            `;
+          }).join("")}
+        </div>
       </section>
     `;
   }
@@ -500,10 +614,12 @@
         const oldQty = n(existing.quantity);
         const oldCost = oldQty * n(existing.avgPrice);
         const newQty = oldQty + quantity;
+
         existing.quantity = newQty;
         existing.avgPrice = (oldCost + quantity * price) / newQty;
         existing.currentPrice = price;
         existing.priceUpdatedAt = live.at;
+        existing.priceSource = live.source;
         existing.transactions = arr(existing.transactions);
         existing.transactions.push({id:id(), type:"buy", quantity, price, date, note});
       } else {
@@ -550,6 +666,7 @@
     x.avgPrice = (oldCost + quantity * live.price) / newQty;
     x.currentPrice = live.price;
     x.priceUpdatedAt = live.at;
+    x.priceSource = live.source;
     x.transactions = arr(x.transactions);
     x.transactions.push({id:id(), type:"buy", quantity, price:live.price, date});
 
@@ -566,6 +683,7 @@
 
     x.currentPrice = live.price;
     x.priceUpdatedAt = live.at;
+    x.priceSource = live.source;
     WCStore.set(data);
   }
 
@@ -611,6 +729,426 @@
     });
   }
 
+  function scrollToBox(boxId){
+    const box = document.getElementById(boxId);
+    if (box) box.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  function injectInvestmentCSS(){
+    if (document.getElementById("investmentsV22CSS")) return;
+
+    const css = document.createElement("style");
+    css.id = "investmentsV22CSS";
+    css.innerHTML = `
+      .investPageTitle{
+        margin:12px 0 22px;
+        text-align:right;
+      }
+
+      .investPageTitle span{
+        display:inline-block;
+        background:#fff7df;
+        color:#d4af37;
+        border-radius:999px;
+        padding:8px 16px;
+        font-weight:1000;
+        font-size:14px;
+        margin-bottom:12px;
+      }
+
+      .investPageTitle h2{
+        margin:0 0 8px;
+        color:#0b1020;
+        font-size:34px;
+        font-weight:1000;
+        line-height:1.25;
+      }
+
+      .investPageTitle p{
+        margin:0;
+        color:#667085;
+        font-size:16px;
+        line-height:1.8;
+      }
+
+      .investInsight,
+      .investPanel{
+        background:#fff;
+        border:1px solid #e7eaf0;
+        border-radius:28px;
+        padding:22px;
+        margin-bottom:22px;
+        box-shadow:0 18px 45px rgba(15,23,42,.09);
+        overflow:hidden;
+      }
+
+      .investInsight{
+        background:#fffbeb;
+        border-color:#fde68a;
+      }
+
+      .investInsight h3,
+      .investPanelHead h3{
+        margin:0 0 10px;
+        color:#0b1020;
+        font-size:26px;
+        font-weight:1000;
+        line-height:1.3;
+      }
+
+      .investInsight p,
+      .investPanelHead p{
+        margin:0;
+        color:#667085;
+        font-size:15px;
+        line-height:1.8;
+      }
+
+      .investQuickGrid{
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:10px;
+        margin-bottom:22px;
+      }
+
+      .investQuickGrid button,
+      .investActionGrid button,
+      .stockBtnGrid button{
+        border:none;
+        background:#0b1020;
+        color:#f6c945;
+        border-radius:18px;
+        padding:14px 10px;
+        font-size:14px;
+        font-weight:1000;
+        font-family:inherit;
+      }
+
+      .investForm{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:12px;
+        margin-top:18px;
+        margin-bottom:16px;
+        width:100%;
+      }
+
+      .investForm input,
+      .investForm select,
+      .stockBuyMore input{
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        height:58px;
+        border:1px solid #e7eaf0;
+        background:#f8fafc;
+        border-radius:18px;
+        padding:0 16px;
+        font-size:16px;
+        color:#101828;
+        outline:none;
+        font-family:inherit;
+        display:block;
+      }
+
+      .investForm input:focus,
+      .investForm select:focus,
+      .stockBuyMore input:focus{
+        border-color:#d4af37;
+        background:#fff;
+        box-shadow:0 0 0 4px rgba(212,175,55,.12);
+      }
+
+      .investForm input[type="date"],
+      .stockBuyMore input[type="date"],
+      .cleanDateInput{
+        direction:ltr !important;
+        text-align:center !important;
+        appearance:none;
+        -webkit-appearance:none;
+        line-height:58px;
+        padding:0 14px !important;
+      }
+
+      .selectedStockBox{
+        background:#f8fafc;
+        border:1px solid #e7eaf0;
+        border-radius:22px;
+        padding:16px;
+        margin:12px 0 16px;
+      }
+
+      .selectedStockBox strong,
+      .selectedStockBox span,
+      .selectedStockBox b{
+        display:block;
+      }
+
+      .selectedStockBox strong{
+        color:#0b1020;
+        font-size:18px;
+        font-weight:1000;
+        margin-bottom:6px;
+      }
+
+      .selectedStockBox span{
+        color:#667085;
+        font-size:14px;
+        font-weight:800;
+        margin-bottom:8px;
+      }
+
+      .selectedStockBox b{
+        color:#d4af37;
+        font-size:18px;
+        font-weight:1000;
+        direction:ltr;
+        text-align:right;
+      }
+
+      .investActionGrid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:10px;
+        margin-top:18px;
+      }
+
+      .investList{
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        margin-top:14px;
+      }
+
+      .investRow{
+        display:grid;
+        grid-template-columns:1fr auto;
+        align-items:center;
+        gap:12px;
+        background:#f8fafc;
+        border:1px solid #e7eaf0;
+        border-radius:18px;
+        padding:14px;
+      }
+
+      .investRow strong,
+      .investRow span{
+        display:block;
+      }
+
+      .investRow strong{
+        color:#0b1020;
+        font-size:15px;
+        font-weight:1000;
+        margin-bottom:4px;
+      }
+
+      .investRow span{
+        color:#667085;
+        font-size:13px;
+        font-weight:800;
+        line-height:1.5;
+      }
+
+      .investRow b{
+        color:#0b1020;
+        font-size:15px;
+        font-weight:1000;
+        direction:ltr;
+        white-space:nowrap;
+      }
+
+      .investRow a{
+        text-decoration:none;
+        background:#0b1020;
+        color:#f6c945;
+        border-radius:14px;
+        padding:10px 14px;
+        font-weight:1000;
+        font-size:13px;
+      }
+
+      .stockCardV2{
+        background:#fff;
+        border:1px solid #e7eaf0;
+        border-radius:26px;
+        padding:18px;
+        margin-top:16px;
+        box-shadow:0 12px 30px rgba(15,23,42,.06);
+      }
+
+      .stockHeaderV2{
+        margin-bottom:14px;
+      }
+
+      .stockHeaderV2 h3{
+        margin:0 0 6px;
+        color:#0b1020;
+        font-size:25px;
+        font-weight:1000;
+        line-height:1.25;
+      }
+
+      .stockHeaderV2 span{
+        color:#667085;
+        font-size:14px;
+        font-weight:900;
+      }
+
+      .stockMiniGrid{
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:10px;
+      }
+
+      .stockMiniGrid div{
+        background:#f8fafc;
+        border:1px solid #e7eaf0;
+        border-radius:18px;
+        padding:13px;
+        min-width:0;
+      }
+
+      .stockMiniGrid small{
+        display:block;
+        color:#667085;
+        font-size:12px;
+        font-weight:900;
+        margin-bottom:6px;
+      }
+
+      .stockMiniGrid strong{
+        display:block;
+        color:#0b1020;
+        font-size:15px;
+        font-weight:1000;
+        direction:ltr;
+        text-align:right;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+
+      .gainText{color:#d4af37 !important;}
+      .lossText{color:#b42318 !important;}
+
+      .stockNoteLine{
+        color:#667085;
+        font-size:13px;
+        font-weight:800;
+        line-height:1.6;
+        margin:12px 0;
+      }
+
+      .stockBuyMore{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+        margin:12px 0;
+      }
+
+      .stockBtnGrid{
+        display:grid;
+        grid-template-columns:1fr 1fr 1fr;
+        gap:8px;
+      }
+
+      .stockBtnGrid .dangerBtn{
+        color:#ffb4a8 !important;
+      }
+
+      .investDistList{
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        margin-top:14px;
+      }
+
+      .distRow{
+        display:grid;
+        grid-template-columns:1fr auto;
+        align-items:center;
+        gap:12px;
+        background:#f8fafc;
+        border:1px solid #e7eaf0;
+        border-radius:18px;
+        padding:13px 14px;
+      }
+
+      .distRow strong{
+        display:block;
+        color:#0b1020;
+        font-size:15px;
+        font-weight:1000;
+        margin-bottom:4px;
+      }
+
+      .distRow span{
+        display:block;
+        color:#667085;
+        font-size:13px;
+        font-weight:800;
+        direction:ltr;
+        text-align:right;
+      }
+
+      .distRow b{
+        color:#0b1020;
+        font-size:16px;
+        font-weight:1000;
+        direction:ltr;
+      }
+
+      @media(max-width:430px){
+        .investPageTitle h2{
+          font-size:30px;
+        }
+
+        .investPanel,
+        .investInsight{
+          padding:20px;
+          border-radius:26px;
+        }
+
+        .investInsight h3,
+        .investPanelHead h3{
+          font-size:24px;
+        }
+
+        .investForm input,
+        .investForm select,
+        .stockBuyMore input{
+          height:56px;
+          font-size:15.5px;
+          border-radius:17px;
+        }
+
+        .investForm input[type="date"],
+        .stockBuyMore input[type="date"]{
+          line-height:56px;
+        }
+
+        .stockHeaderV2 h3{
+          font-size:23px;
+        }
+
+        .stockMiniGrid{
+          grid-template-columns:1fr;
+        }
+
+        .stockBuyMore{
+          grid-template-columns:1fr;
+        }
+
+        .stockBtnGrid{
+          grid-template-columns:1fr;
+        }
+      }
+    `;
+
+    document.head.appendChild(css);
+  }
+
   window.PWC_Portfolio = {
     applyFilters,
     selectStock,
@@ -621,7 +1159,8 @@
     addDividend,
     addCapital,
     refreshAllPrices,
-    fetchNews
+    fetchNews,
+    scrollToBox
   };
 
   WCEvents.on("dataChanged", render);
