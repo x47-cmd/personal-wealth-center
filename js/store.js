@@ -166,15 +166,29 @@ const WCStore = (() => {
   }
 
   function updateSettings(nextSettings = {}) {
-    const data = load();
+  const raw = localStorage.getItem(KEY);
+  const data = raw ? normalize(JSON.parse(raw)) : defaultData();
 
-    data.settings = {
-      ...data.settings,
-      ...nextSettings
-    };
+  data.settings = {
+    ...(data.settings || {}),
+    ...nextSettings
+  };
 
-    return save(data);
+  data.meta.updatedAt = today();
+  data.meta.version = WC_CONFIG.app.version;
+
+  localStorage.setItem(KEY, JSON.stringify(data));
+
+  if (window.WCEvents && typeof WCEvents.emit === "function") {
+    WCEvents.emit("settingsChanged", data.settings);
+    WCEvents.emit("dataChanged", {
+      updatedAt: data.meta.updatedAt,
+      version: data.meta.version
+    });
   }
+
+  return data;
+}
 
   function updateSpendingSettings(nextSettings = {}) {
     const data = load();
