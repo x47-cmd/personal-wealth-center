@@ -1125,3 +1125,94 @@ padding:7px 6px env(safe-area-inset-bottom) !important;
     bottom:104px;
   }
 }
+
+/* ==========================================
+   Premium Top Brand
+========================================== */
+
+.topBrand{
+    display:flex;
+    align-items:center;
+    gap:16px;
+
+    margin:10px 0 28px;
+}
+
+.brandIcon{
+
+    width:58px;
+    height:58px;
+
+    border-radius:18px;
+
+    background:linear-gradient(135deg,#f6c945,#d4af37);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:30px;
+
+    box-shadow:0 12px 30px rgba(212,175,55,.25);
+
+    flex-shrink:0;
+}
+
+.brandText{
+    flex:1;
+}
+
+.brandText h1{
+
+    margin:0;
+
+    color:#0b1020;
+
+    font-size:29px;
+
+    font-weight:1000;
+
+    line-height:1.2;
+}
+
+.brandText p{
+
+    margin-top:6px;
+
+    color:#667085;
+
+    font-size:15px;
+
+    font-weight:700;
+}
+
+@media(max-width:430px){
+
+    .topBrand{
+
+        margin:8px 0 22px;
+
+        gap:14px;
+    }
+
+    .brandIcon{
+
+        width:52px;
+        height:52px;
+
+        border-radius:16px;
+
+        font-size:26px;
+    }
+
+    .brandText h1{
+
+        font-size:24px;
+    }
+
+    .brandText p{
+
+        font-size:13px;
+    }
+
+}
