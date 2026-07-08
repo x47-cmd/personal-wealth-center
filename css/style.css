@@ -75,3 +75,81 @@ body{
 #appShell{
   padding-bottom:135px !important;
 }
+
+/* =========================================================
+   Final Bottom Nav - 6 Main Centers
+========================================================= */
+
+.bottomNav{
+  position:fixed !important;
+  left:14px !important;
+  right:14px !important;
+  bottom:calc(10px + env(safe-area-inset-bottom)) !important;
+
+  height:92px !important;
+  width:auto !important;
+
+  display:grid !important;
+  grid-template-columns:repeat(6, 1fr) !important;
+  align-items:center !important;
+
+  gap:4px !important;
+  padding:9px 7px !important;
+
+  background:#ffffff !important;
+  border:1px solid #edf0f5 !important;
+  border-radius:28px !important;
+  box-shadow:0 -10px 30px rgba(15,23,42,.10) !important;
+
+  overflow:hidden !important;
+  z-index:99999 !important;
+}
+
+.navBtn{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:74px !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  padding:7px 1px !important;
+  margin:0 !important;
+
+  border:0 !important;
+  border-radius:22px !important;
+  background:transparent !important;
+
+  color:#667085 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+}
+
+.navBtn span{
+  font-size:21px !important;
+  line-height:1 !important;
+  margin:0 0 5px !important;
+}
+
+.navBtn small{
+  font-size:9.5px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+.navBtn.active{
+  background:#0b1020 !important;
+  color:#f6c945 !important;
+}
+
+body{
+  padding-bottom:125px !important;
+}
+
+#appShell{
+  padding-bottom:135px !important;
+}
