@@ -1,8 +1,8 @@
 /* ==========================================================
    Personal Wealth Center
    Settings Center
-   Version: 1.3.0
-   Full Financial Control Center
+   Version: 1.4.0
+   Modern Auto-Save Control Center
 ========================================================== */
 
 "use strict";
@@ -19,32 +19,35 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
-  function getData(){
+  function data(){
     return WCStore.get();
   }
 
-  function getSettings(){
-    const data = getData();
+  function settings(){
+    const d = data();
     const s = {
       ...defaults,
-      ...(data.settings || {})
+      ...(d.settings || {})
     };
 
     return {
       currency: s.currency || "AED",
-      targetNetWorth: num(s.targetNetWorth, 1000000),
-      targetDividendIncomeMonthly: num(s.targetDividendIncomeMonthly, 10000),
-      monthlyInvestment: num(s.monthlyInvestment, 3000),
-      emergencyCash: num(s.emergencyCash, 15000),
-      emergencyFundTarget: num(s.emergencyFundTarget || s.emergencyCash, 15000),
-      expectedReturn: num(s.expectedReturn, 10),
-      monthlySalary: num(s.monthlySalary, 32000),
+      monthlySalary: num(s.monthlySalary, 26550),
       salaryDay: num(s.salaryDay, 27),
       annualRaise: num(s.annualRaise, 0),
-      monthlySavingsTarget: num(s.monthlySavingsTarget, 0),
-      monthlySpendingLimit: num(s.monthlySpendingLimit, 7000),
+
+      targetNetWorth: num(s.targetNetWorth, 1000000),
+      monthlyInvestment: num(s.monthlyInvestment, 3000),
+      expectedReturn: num(s.expectedReturn, 10),
+      targetDividendIncomeMonthly: num(s.targetDividendIncomeMonthly, 10000),
       retirementAge: num(s.retirementAge, 45),
-      inflationRate: num(s.inflationRate, 3)
+      inflationRate: num(s.inflationRate, 3),
+
+      emergencyCash: num(s.emergencyCash, 5000),
+      emergencyFundTarget: num(s.emergencyFundTarget, 100000),
+
+      monthlySavingsTarget: num(s.monthlySavingsTarget, 0),
+      monthlySpendingLimit: num(s.monthlySpendingLimit, 7000)
     };
   }
 
@@ -52,136 +55,207 @@
     return WCUtils.money(num(v, 0));
   }
 
-  function progress(current, target){
+  function pct(current, target){
     if(!target || target <= 0) return 0;
-    return Math.min(100, Math.max(0, (current / target) * 100));
+    return Math.min(100, Math.max(0, Math.round((current / target) * 100)));
   }
 
-  function field(label, id, value, hint, type = "number"){
+  function save(next){
+    WCStore.updateSettings(next);
+
+    const toast = document.getElementById("settingsToast");
+    if(toast){
+      toast.classList.add("show");
+      clearTimeout(window.__pwcSettingsToast);
+      window.__pwcSettingsToast = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 1400);
+    }
+
+    render(false);
+  }
+
+  function updateNumber(key, fallback){
+    const current = settings()[key];
+    const label = labels[key] || key;
+
+    const value = prompt(`تعديل ${label}`, current);
+
+    if(value === null) return;
+
+    const n = num(value, fallback);
+
+    save({ [key]: n });
+  }
+
+  function updateCurrency(){
+    const s = settings();
+    const value = prompt("اكتب العملة: AED أو USD أو SAR", s.currency);
+
+    if(!value) return;
+
+    const clean = value.trim().toUpperCase();
+
+    if(!["AED","USD","SAR"].includes(clean)){
+      alert("العملة المدعومة حالياً: AED / USD / SAR");
+      return;
+    }
+
+    save({ currency: clean });
+  }
+
+  const labels = {
+    currency:"العملة",
+    monthlySalary:"الراتب الشهري",
+    salaryDay:"يوم الراتب",
+    annualRaise:"الزيادة السنوية",
+    targetNetWorth:"هدف الثروة",
+    monthlyInvestment:"الاستثمار الشهري",
+    expectedReturn:"العائد السنوي المتوقع",
+    targetDividendIncomeMonthly:"هدف الدخل السلبي",
+    retirementAge:"سن الحرية المالية",
+    inflationRate:"معدل التضخم",
+    emergencyCash:"الكاش الحالي",
+    emergencyFundTarget:"هدف الطوارئ",
+    monthlySavingsTarget:"هدف الادخار الشهري",
+    monthlySpendingLimit:"حد المصروف الشهري"
+  };
+
+  function settingRow(icon, label, value, action){
     return `
-      <label class="settingField">
-        <span>${label}</span>
-        <input id="${id}" type="${type}" inputmode="decimal" value="${value}" />
-        ${hint ? `<small>${hint}</small>` : ""}
-      </label>
+      <button class="settingRow" onclick="${action}">
+        <div class="settingRowIcon">${icon}</div>
+        <div class="settingRowText">
+          <strong>${label}</strong>
+          <span>${value}</span>
+        </div>
+        <div class="settingRowArrow">›</div>
+      </button>
+    `;
+  }
+
+  function metricCard(icon, label, value, sub){
+    return `
+      <div class="settingsMetric">
+        <div class="settingsMetricIcon">${icon}</div>
+        <small>${label}</small>
+        <strong>${value}</strong>
+        ${sub ? `<span>${sub}</span>` : ""}
+      </div>
     `;
   }
 
   function section(title, desc, body){
     return `
-      <section class="formCard settingsSection">
-        <h3>${title}</h3>
-        ${desc ? `<p class="settingsDesc">${desc}</p>` : ""}
-        <div class="formGrid">
+      <section class="settingsPanel">
+        <div class="settingsPanelHead">
+          <h3>${title}</h3>
+          ${desc ? `<p>${desc}</p>` : ""}
+        </div>
+        <div class="settingsList">
           ${body}
         </div>
       </section>
     `;
   }
 
-  function render(){
-    const s = getSettings();
+  function render(scrollTop = false){
+    const s = settings();
 
-    const emergencyProgress = progress(s.emergencyCash, s.emergencyFundTarget);
     const yearlyInvestment = s.monthlyInvestment * 12;
-    const savingsRate = s.monthlySalary > 0
+    const investRate = s.monthlySalary > 0
       ? Math.round((s.monthlyInvestment / s.monthlySalary) * 100)
       : 0;
+
+    const emergencyPct = pct(s.emergencyCash, s.emergencyFundTarget);
+    const afterInvestment = Math.max(0, s.monthlySalary - s.monthlyInvestment);
 
     page.innerHTML = `
       ${WCUI.pageHero(
         "الإعدادات",
-        "مركز التحكم الكامل في أهدافك المالية، الراتب، الاستثمار، الطوارئ، والنسخ الاحتياطي.",
+        "مركز التحكم الذكي في الراتب، الاستثمار، أهداف الثروة، الطوارئ، والمصروفات.",
         "Settings"
       )}
 
-      ${WCUI.statGrid([
-        { icon:"💾", label:"الإصدار", value:WC_CONFIG.app.version },
-        { icon:"💵", label:"العملة", value:s.currency },
-        { icon:"📈", label:"الاستثمار الشهري", value:money(s.monthlyInvestment) },
-        { icon:"🎯", label:"هدف الثروة", value:money(s.targetNetWorth) }
-      ])}
+      <div id="settingsToast" class="settingsToast">تم الحفظ ✅</div>
+
+      <section class="settingsDashboard">
+        ${metricCard("💵", "الراتب", money(s.monthlySalary), `بعد الاستثمار: ${money(afterInvestment)}`)}
+        ${metricCard("📈", "الاستثمار الشهري", money(s.monthlyInvestment), `سنوياً: ${money(yearlyInvestment)}`)}
+        ${metricCard("🎯", "هدف الثروة", money(s.targetNetWorth), `دخل سلبي: ${money(s.targetDividendIncomeMonthly)}`)}
+        ${metricCard("🛟", "الطوارئ", `${emergencyPct}%`, `${money(s.emergencyCash)} / ${money(s.emergencyFundTarget)}`)}
+      </section>
 
       <section class="decisionCard">
-        <h3>ملخص الإعدادات</h3>
+        <h3>القراءة الذكية</h3>
         <p>
           تستثمر حالياً <b>${money(s.monthlyInvestment)}</b> شهرياً،
-          أي تقريباً <b>${money(yearlyInvestment)}</b> سنوياً.
-          نسبة الاستثمار من الراتب حوالي <b>${savingsRate}%</b>.
+          وهذا يساوي تقريباً <b>${investRate}%</b> من راتبك.
+          صندوق الطوارئ مكتمل بنسبة <b>${emergencyPct}%</b>.
         </p>
       </section>
 
       ${section(
-        "الملف المالي الأساسي",
-        "الإعدادات العامة التي تستخدمها كل صفحات المشروع.",
+        "الملف المالي",
+        "اضغط على أي بند لتعديله. يتم الحفظ تلقائياً.",
         `
-          <label class="settingField">
-            <span>العملة</span>
-            <select id="setCurrency">
-              <option value="AED" ${s.currency==="AED" ? "selected" : ""}>AED - درهم إماراتي</option>
-              <option value="USD" ${s.currency==="USD" ? "selected" : ""}>USD - دولار</option>
-              <option value="SAR" ${s.currency==="SAR" ? "selected" : ""}>SAR - ريال سعودي</option>
-            </select>
-            <small>العملة الأساسية في الرئيسية، التحليل، الثروة، والمصروفات.</small>
-          </label>
-
-          ${field("الراتب الشهري", "setMonthlySalary", s.monthlySalary, "راتبك الشهري الأساسي.")}
-          ${field("يوم نزول الراتب", "setSalaryDay", s.salaryDay, "مثال: 27")}
-          ${field("الزيادة السنوية المتوقعة", "setAnnualRaise", s.annualRaise, "اختياري. مثال: 5000")}
+          ${settingRow("💵", "العملة", s.currency, "PWC_Settings.updateCurrency()")}
+          ${settingRow("🏦", "الراتب الشهري", money(s.monthlySalary), "PWC_Settings.updateNumber('monthlySalary',26550)")}
+          ${settingRow("📅", "يوم نزول الراتب", s.salaryDay, "PWC_Settings.updateNumber('salaryDay',27)")}
+          ${settingRow("⬆️", "الزيادة السنوية المتوقعة", money(s.annualRaise), "PWC_Settings.updateNumber('annualRaise',0)")}
         `
       )}
 
       ${section(
         "أهداف الثروة والاستثمار",
-        "هذه القيم تتحكم في حسابات النمو، التوقعات، والتحليل المالي.",
+        "القيم الأساسية لحسابات النمو والتوقعات والتحليل المالي.",
         `
-          ${field("هدف الثروة", "setTargetNetWorth", s.targetNetWorth, "مثال: 1000000")}
-          ${field("الاستثمار الشهري", "setMonthlyInvestment", s.monthlyInvestment, "المبلغ الذي تخطط تستثمره شهرياً.")}
-          ${field("العائد السنوي المتوقع %", "setExpectedReturn", s.expectedReturn, "مثال: 10")}
-          ${field("هدف الدخل السلبي الشهري", "setTargetDividendIncomeMonthly", s.targetDividendIncomeMonthly, "مثال: 10000")}
-          ${field("سن الحرية المالية / التقاعد", "setRetirementAge", s.retirementAge, "مثال: 45")}
-          ${field("معدل التضخم المتوقع %", "setInflationRate", s.inflationRate, "مثال: 3")}
+          ${settingRow("🎯", "هدف الثروة", money(s.targetNetWorth), "PWC_Settings.updateNumber('targetNetWorth',1000000)")}
+          ${settingRow("📈", "الاستثمار الشهري", money(s.monthlyInvestment), "PWC_Settings.updateNumber('monthlyInvestment',3000)")}
+          ${settingRow("📊", "العائد السنوي المتوقع", `${s.expectedReturn}%`, "PWC_Settings.updateNumber('expectedReturn',10)")}
+          ${settingRow("💸", "هدف الدخل السلبي الشهري", money(s.targetDividendIncomeMonthly), "PWC_Settings.updateNumber('targetDividendIncomeMonthly',10000)")}
+          ${settingRow("🏁", "سن الحرية المالية", `${s.retirementAge} سنة`, "PWC_Settings.updateNumber('retirementAge',45)")}
+          ${settingRow("🔥", "معدل التضخم المتوقع", `${s.inflationRate}%`, "PWC_Settings.updateNumber('inflationRate',3)")}
         `
       )}
+
+      <section class="settingsPanel">
+        <div class="settingsPanelHead">
+          <h3>صندوق الطوارئ</h3>
+          <p>متابعة الكاش الاحتياطي مقابل الهدف المطلوب.</p>
+        </div>
+
+        <div class="emergencyBox">
+          <div>
+            <strong>${emergencyPct}%</strong>
+            <span>مكتمل</span>
+          </div>
+          <div class="progressBar">
+            <div class="progressFill" style="width:${emergencyPct}%"></div>
+          </div>
+          <p>الحالي: ${money(s.emergencyCash)} — الهدف: ${money(s.emergencyFundTarget)}</p>
+        </div>
+
+        <div class="settingsList">
+          ${settingRow("💰", "الكاش الحالي", money(s.emergencyCash), "PWC_Settings.updateNumber('emergencyCash',5000)")}
+          ${settingRow("🛟", "هدف صندوق الطوارئ", money(s.emergencyFundTarget), "PWC_Settings.updateNumber('emergencyFundTarget',100000)")}
+        </div>
+      </section>
 
       ${section(
-        "الكاش والطوارئ",
-        "حدد المبلغ الحالي والهدف المطلوب لصندوق الطوارئ.",
+        "المصروفات والادخار",
+        "هذه القيم سيتم ربطها بصفحة المصروفات والتحليل.",
         `
-          ${field("الكاش الاحتياطي الحالي", "setEmergencyCash", s.emergencyCash, "المبلغ المتوفر حالياً للطوارئ.")}
-          ${field("هدف صندوق الطوارئ", "setEmergencyFundTarget", s.emergencyFundTarget, "مثال: 15000 أو 30000")}
-          ${field("هدف الادخار الشهري", "setMonthlySavingsTarget", s.monthlySavingsTarget, "اختياري.")}
-          ${field("حد المصروف الشهري", "setMonthlySpendingLimit", s.monthlySpendingLimit, "يرتبط بصفحة المصروفات.")}
+          ${settingRow("💳", "حد المصروف الشهري", money(s.monthlySpendingLimit), "PWC_Settings.updateNumber('monthlySpendingLimit',7000)")}
+          ${settingRow("🏦", "هدف الادخار الشهري", money(s.monthlySavingsTarget), "PWC_Settings.updateNumber('monthlySavingsTarget',0)")}
         `
       )}
 
-      <section class="progressCard">
-        <div class="progressTop">
-          <h3>تقدم صندوق الطوارئ</h3>
-          <div class="progressPercent">${Math.round(emergencyProgress)}%</div>
+      <section class="settingsPanel">
+        <div class="settingsPanelHead">
+          <h3>إدارة البيانات</h3>
+          <p>النسخ الاحتياطي وإعادة ضبط بيانات التطبيق.</p>
         </div>
-        <div class="progressBar">
-          <div class="progressFill" style="width:${emergencyProgress}%"></div>
-        </div>
-        <p>
-          الحالي: ${money(s.emergencyCash)}
-          —
-          الهدف: ${money(s.emergencyFundTarget)}
-        </p>
-      </section>
-
-      <section class="formCard">
-        <button class="mainBtn" onclick="PWC_Settings.saveFinancialSettings()">
-          حفظ كل الإعدادات
-        </button>
-
-        <p id="settingsSaveMsg" style="display:none;margin-top:14px;color:#1f7a2e;font-weight:900;text-align:center;">
-          تم حفظ الإعدادات بنجاح ✅
-        </p>
-      </section>
-
-      <section class="tableCard">
-        <h3>إدارة البيانات</h3>
 
         <button class="mainBtn" onclick="PWC_Settings.backup()">
           إنشاء نسخة احتياطية
@@ -192,54 +266,30 @@
         </button>
       </section>
 
-      ${WCUI.decision(
-        "هذه الصفحة أصبحت مركز التحكم الأساسي. أي تعديل هنا سيتم استخدامه لاحقاً في الرئيسية، التحليل، الثروة، المحفظة، والمصروفات."
-      )}
+      <section class="settingsPanel aboutPanel">
+        <div class="settingsPanelHead">
+          <h3>حول التطبيق</h3>
+          <p>${WC_CONFIG.app.name}</p>
+        </div>
+
+        <div class="settingsList">
+          ${settingRow("💾", "الإصدار", WC_CONFIG.app.version, "void(0)")}
+          ${settingRow("📦", "Build", WC_CONFIG.app.build || "-", "void(0)")}
+          ${settingRow("🧭", "الوضع", WC_CONFIG.app.devMode ? "Development" : "Production", "void(0)")}
+        </div>
+      </section>
     `;
-  }
 
-  function readNumber(id, fallback){
-    const el = document.getElementById(id);
-    return num(el ? el.value : fallback, fallback);
-  }
-
-  function saveFinancialSettings(){
-    const nextSettings = {
-      currency: document.getElementById("setCurrency").value || "AED",
-
-      monthlySalary: readNumber("setMonthlySalary", 32000),
-      salaryDay: readNumber("setSalaryDay", 27),
-      annualRaise: readNumber("setAnnualRaise", 0),
-
-      targetNetWorth: readNumber("setTargetNetWorth", 1000000),
-      monthlyInvestment: readNumber("setMonthlyInvestment", 3000),
-      expectedReturn: readNumber("setExpectedReturn", 10),
-      targetDividendIncomeMonthly: readNumber("setTargetDividendIncomeMonthly", 10000),
-      retirementAge: readNumber("setRetirementAge", 45),
-      inflationRate: readNumber("setInflationRate", 3),
-
-      emergencyCash: readNumber("setEmergencyCash", 15000),
-      emergencyFundTarget: readNumber("setEmergencyFundTarget", 15000),
-      monthlySavingsTarget: readNumber("setMonthlySavingsTarget", 0),
-      monthlySpendingLimit: readNumber("setMonthlySpendingLimit", 7000)
-    };
-
-    WCStore.updateSettings(nextSettings);
-
-    render();
-
-    const msg = document.getElementById("settingsSaveMsg");
-    if(msg){
-      msg.style.display = "block";
-      setTimeout(() => msg.style.display = "none", 2500);
+    if(scrollTop){
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 
   function backup(){
-    const data = WCStore.get();
+    const d = WCStore.get();
 
     const blob = new Blob(
-      [JSON.stringify(data,null,2)],
+      [JSON.stringify(d,null,2)],
       {type:"application/json"}
     );
 
@@ -256,17 +306,18 @@
   function reset(){
     if(!confirm("هل أنت متأكد من حذف جميع البيانات؟")) return;
     WCStore.reset();
-    render();
+    render(true);
   }
 
   window.PWC_Settings = {
+    updateNumber,
+    updateCurrency,
     backup,
-    reset,
-    saveFinancialSettings
+    reset
   };
 
-  WCEvents.on("dataChanged", render);
-  WCEvents.on("settingsChanged", render);
-  document.addEventListener("DOMContentLoaded", render);
+  WCEvents.on("dataChanged", () => render(false));
+  WCEvents.on("settingsChanged", () => render(false));
+  document.addEventListener("DOMContentLoaded", () => render(false));
 
 })();
