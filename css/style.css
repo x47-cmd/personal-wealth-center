@@ -459,3 +459,124 @@ body{
   .navBtn span{font-size:20px}
   .navBtn small{font-size:9px}
 }
+
+
+/* =========================================================
+   iPhone Compact Polish
+========================================================= */
+
+@media (max-width:430px){
+
+  body{
+    padding-bottom:115px !important;
+  }
+
+  #appShell{
+    padding:18px 14px 125px !important;
+  }
+
+  .appHeader{
+    padding:24px 20px !important;
+    border-radius:28px !important;
+    margin-bottom:22px !important;
+  }
+
+  .appHeader h1{
+    font-size:25px !important;
+    line-height:1.35 !important;
+  }
+
+  .appHeader p{
+    font-size:15px !important;
+    line-height:1.8 !important;
+  }
+
+  .appBadge,
+  .heroTag{
+    font-size:13px !important;
+    padding:7px 15px !important;
+    margin-bottom:14px !important;
+  }
+
+  .heroCard{
+    padding:26px 22px !important;
+    border-radius:28px !important;
+    margin-bottom:20px !important;
+  }
+
+  .heroCard h2,
+  .pageHero h2{
+    font-size:27px !important;
+    line-height:1.35 !important;
+  }
+
+  .heroCard p,
+  .pageHero p{
+    font-size:15.5px !important;
+    line-height:1.8 !important;
+  }
+
+  .heroValue{
+    font-size:31px !important;
+  }
+
+  .statGrid{
+    gap:12px !important;
+  }
+
+  .statCard{
+    padding:18px 14px !important;
+    border-radius:22px !important;
+  }
+
+  .statIcon{
+    font-size:24px !important;
+  }
+
+  .statLabel{
+    font-size:14px !important;
+  }
+
+  .statValue{
+    font-size:19px !important;
+  }
+
+  .progressCard,
+  .formCard,
+  .tableCard,
+  .emptyCard,
+  .decisionCard{
+    padding:20px !important;
+    border-radius:24px !important;
+  }
+
+  .progressTop h3,
+  .formCard h3,
+  .tableCard h3,
+  .emptyCard h3,
+  .decisionCard h3{
+    font-size:23px !important;
+  }
+
+  .bottomNav{
+    left:12px !important;
+    right:12px !important;
+    height:82px !important;
+    padding:7px 6px !important;
+    border-radius:25px !important;
+  }
+
+  .navBtn{
+    height:66px !important;
+    border-radius:19px !important;
+  }
+
+  .navBtn span{
+    font-size:19px !important;
+    margin-bottom:4px !important;
+  }
+
+  .navBtn small{
+    font-size:8.5px !important;
+  }
+}
