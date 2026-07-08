@@ -1,17 +1,21 @@
 /* ==========================================================
    Personal Wealth Center Global Config
-   Version: 1.1.0
+   Version: 1.1.1
+   Central App Settings / No Index Version Editing
 ========================================================== */
+
 "use strict";
 
 const WC_CONFIG = {
   app: {
     name: "مركز إدارة الثروة الشخصية",
     shortName: "Wealth Center",
-    version: "1.1.0",
+    version: "1.1.1",
+    build: "2026.07.08",
     currency: "AED",
     locale: "ar-AE",
-    direction: "rtl"
+    direction: "rtl",
+    devMode: true
   },
 
   storage: {
@@ -23,14 +27,11 @@ const WC_CONFIG = {
   pages: {
     home: "الرئيسية",
     portfolio: "محفظتي",
-    dividends: "التوزيعات",
-    assets: "الأصول",
-    liabilities: "الالتزامات",
     spending: "المصروفات",
-    goals: "الأهداف",
+    assets: "الثروة",
     reports: "التحليل",
-    quick: "إدخال سريع",
-    settings: "الإعدادات"
+    settings: "الإعدادات",
+    quick: "إدخال سريع"
   },
 
   defaults: {
@@ -45,7 +46,6 @@ const WC_CONFIG = {
     liabilities: [],
     expenses: [],
     budgets: [],
-
     goals: [],
     snapshots: [],
 
@@ -58,10 +58,15 @@ const WC_CONFIG = {
     },
 
     settings: {
+      currency: "AED",
       monthlyInvestment: 3500,
       targetNetWorth: 1000000,
       targetDividendIncomeMonthly: 10000,
-      emergencyFundTarget: 15000
+      emergencyCash: 15000,
+      emergencyFundTarget: 15000,
+      expectedReturn: 10,
+      monthlySalary: 32000,
+      salaryDay: 27
     }
   }
 };
