@@ -1,6 +1,6 @@
 /* =========================================================
-   Personal Wealth Center - Clean Premium Style V4 Final
-   iPhone Ready / 6 Bottom Nav / No Duplicate Overrides
+   Personal Wealth Center - Clean Premium Style V4.1 Final
+   iPhone Ready / 6 Bottom Nav / Fixed Bottom Gap
 ========================================================= */
 
 *{
@@ -34,14 +34,14 @@ body{
   color:var(--text);
   direction:rtl;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
-  padding-bottom:115px;
+  padding-bottom:105px;
 }
 
 #appShell{
   width:100%;
   max-width:980px;
   margin:0 auto;
-  padding:22px 16px 115px;
+  padding:22px 16px 105px;
 }
 
 /* Header */
@@ -86,7 +86,7 @@ body{
 
 .page{
   display:none;
-  padding-bottom:50px;
+  padding-bottom:40px;
 }
 
 .page.active,
@@ -398,18 +398,19 @@ body{
 
 .bottomNav{
   position:fixed;
-  left:14px;
-  right:14px;
-  bottom:calc(14px + env(safe-area-inset-bottom));
-  height:80px;
+  left:12px;
+  right:12px;
+  bottom:0;
+  height:92px;
   display:grid;
   grid-template-columns:repeat(6,1fr);
-  align-items:center;
+  align-items:start;
   gap:4px;
-  padding:7px 6px;
+  padding:7px 6px calc(7px + env(safe-area-inset-bottom));
   background:white;
   border:1px solid #edf0f5;
-  border-radius:25px;
+  border-bottom:none;
+  border-radius:25px 25px 0 0;
   box-shadow:0 -10px 30px rgba(15,23,42,.10);
   overflow:hidden;
   z-index:99999;
@@ -464,21 +465,28 @@ body{
   .formGrid{
     grid-template-columns:repeat(2,1fr);
   }
+
+  .bottomNav{
+    left:50%;
+    right:auto;
+    transform:translateX(-50%);
+    width:min(940px, calc(100% - 24px));
+  }
 }
 
 /* iPhone */
 
 @media (max-width:430px){
   body{
-    padding-bottom:115px;
+    padding-bottom:105px;
   }
 
   #appShell{
-    padding:18px 14px 115px;
+    padding:18px 14px 105px;
   }
 
   .page{
-    padding-bottom:50px;
+    padding-bottom:35px;
   }
 
   .appHeader{
@@ -586,10 +594,10 @@ body{
   .bottomNav{
     left:12px;
     right:12px;
-    bottom:calc(14px + env(safe-area-inset-bottom));
-    height:80px;
-    padding:7px 6px;
-    border-radius:25px;
+    bottom:0;
+    height:92px;
+    padding:7px 6px calc(7px + env(safe-area-inset-bottom));
+    border-radius:25px 25px 0 0;
   }
 
   .navBtn{
