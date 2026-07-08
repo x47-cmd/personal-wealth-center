@@ -580,3 +580,51 @@ body{
     font-size:8.5px !important;
   }
 }
+
+/* =========================================================
+   Final Safe Bottom Spacing Fix
+========================================================= */
+
+body{
+  padding-bottom:180px !important;
+}
+
+#appShell{
+  padding-bottom:200px !important;
+}
+
+.page{
+  padding-bottom:150px !important;
+}
+
+.bottomNav{
+  bottom:calc(16px + env(safe-area-inset-bottom)) !important;
+  height:82px !important;
+}
+
+.navBtn{
+  height:66px !important;
+}
+
+@media (max-width:430px){
+  body{
+    padding-bottom:190px !important;
+  }
+
+  #appShell{
+    padding-bottom:210px !important;
+  }
+
+  .page{
+    padding-bottom:170px !important;
+  }
+
+  .bottomNav{
+    bottom:calc(14px + env(safe-area-inset-bottom)) !important;
+    height:80px !important;
+  }
+
+  .navBtn{
+    height:64px !important;
+  }
+}
