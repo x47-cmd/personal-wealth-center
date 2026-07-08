@@ -1,7 +1,7 @@
 /* ==========================================================
    Personal Wealth Center Home Page
-   Version: 1.2.0
-   Spending Connected
+   Version: 1.3.0
+   Clean Premium + Spending Connected
 ========================================================== */
 "use strict";
 
@@ -14,21 +14,39 @@
   }
 
   function calc(data) {
-    const portfolioValue = (data.portfolio || []).reduce((s, x) => s + WCUtils.num(x.currentValue), 0);
-    const assetsValue = (data.assets || []).reduce((s, x) => s + WCUtils.num(x.value), 0);
-    const liabilitiesValue = (data.liabilities || []).reduce((s, x) => s + WCUtils.num(x.balance), 0);
-    const dividendsValue = (data.dividends || []).reduce((s, x) => s + WCUtils.num(x.amount), 0);
+    const portfolioValue = (data.portfolio || []).reduce((s, x) => {
+      return s + WCUtils.num(x.currentValue || x.value || x.marketValue);
+    }, 0);
+
+    const assetsValue = (data.assets || []).reduce((s, x) => {
+      return s + WCUtils.num(x.value);
+    }, 0);
+
+    const liabilitiesValue = (data.liabilities || []).reduce((s, x) => {
+      return s + WCUtils.num(x.balance || x.amount || x.value);
+    }, 0);
+
+    const dividendsValue = (data.dividends || []).reduce((s, x) => {
+      return s + WCUtils.num(x.amount);
+    }, 0);
 
     const currentMonth = monthKey();
     const monthlyBudget = WCUtils.num(data.spendingSettings?.monthlyBudget, 7000);
 
-    const monthExpenses = (data.expenses || []).filter(x => monthKey(x.date) === currentMonth);
-    const monthlySpent = monthExpenses.reduce((s, x) => s + WCUtils.num(x.amount), 0);
+    const monthExpenses = (data.expenses || []).filter(x => {
+      return monthKey(x.date) === currentMonth;
+    });
+
+    const monthlySpent = monthExpenses.reduce((s, x) => {
+      return s + WCUtils.num(x.amount);
+    }, 0);
+
     const spendingRemaining = monthlyBudget - monthlySpent;
-    const spendingPercent = monthlyBudget > 0 ? Math.min((monthlySpent / monthlyBudget) * 100, 999) : 0;
+    const spendingPercent = monthlyBudget > 0
+      ? Math.min((monthlySpent / monthlyBudget) * 100, 999)
+      : 0;
 
-    const cashAfterSpending = Math.max(monthlyBudget - monthlySpent, 0);
-
+    const cashAfterSpending = Math.max(spendingRemaining, 0);
     const totalAssets = portfolioValue + assetsValue + cashAfterSpending;
     const netWorth = totalAssets - liabilitiesValue;
 
@@ -87,11 +105,6 @@
       )}
 
       ${WCUI.decision(smartDecision(c))}
-
-      ${WCUI.empty(
-        "الربط المركزي شغال",
-        "أي مصروف تضيفه من صفحة المصروفات يظهر هنا تلقائياً ويأثر على الكاش وصافي الثروة."
-      )}
     `;
   }
 
