@@ -1,8 +1,8 @@
 /* ==========================================================
    Personal Wealth Center
-   Investments Center V2.2
+   Investments Center V2.3
    File: js/portfolio.js
-   Clean Layout / UAE Stocks / Smart Add / Capital / News
+   Cleaner UI / Fixed Dates / Organized Panels
 ========================================================== */
 
 "use strict";
@@ -52,36 +52,15 @@
     {symbol:"TALABAT", ar:"طلبات", name:"Talabat", market:"DFM", sector:"تقنية", yahoo:["TALABAT.AE"]}
   ];
 
-  injectInvestmentCSS();
+  injectCSS();
 
-  function n(v, f = 0){
-    const x = Number(v);
-    return Number.isFinite(x) ? x : f;
-  }
-
-  function arr(v){
-    return Array.isArray(v) ? v : [];
-  }
-
-  function money(v){
-    return WCUtils.money(n(v));
-  }
-
-  function today(){
-    return WCUtils.today ? WCUtils.today() : new Date().toISOString().slice(0,10);
-  }
-
-  function id(){
-    return WCUtils.uid ? WCUtils.uid() : String(Date.now() + Math.random());
-  }
-
-  function el(id){
-    return document.getElementById(id);
-  }
-
-  function val(id){
-    return el(id) ? String(el(id).value || "").trim() : "";
-  }
+  const n = (v, f = 0) => Number.isFinite(Number(v)) ? Number(v) : f;
+  const arr = v => Array.isArray(v) ? v : [];
+  const money = v => WCUtils.money(n(v));
+  const today = () => WCUtils.today ? WCUtils.today() : new Date().toISOString().slice(0,10);
+  const uid = () => WCUtils.uid ? WCUtils.uid() : String(Date.now() + Math.random());
+  const el = id => document.getElementById(id);
+  const val = id => el(id) ? String(el(id).value || "").trim() : "";
 
   function ensure(data){
     data.portfolio = arr(data.portfolio);
@@ -94,21 +73,10 @@
     return UAE_STOCKS.find(x => x.symbol === symbol) || null;
   }
 
-  function cost(x){
-    return n(x.quantity) * n(x.avgPrice);
-  }
-
-  function value(x){
-    return n(x.quantity) * n(x.currentPrice || x.avgPrice);
-  }
-
-  function pnl(x){
-    return value(x) - cost(x);
-  }
-
-  function pnlPct(x){
-    return cost(x) > 0 ? pnl(x) / cost(x) * 100 : 0;
-  }
+  function cost(x){ return n(x.quantity) * n(x.avgPrice); }
+  function value(x){ return n(x.quantity) * n(x.currentPrice || x.avgPrice); }
+  function pnl(x){ return value(x) - cost(x); }
+  function pnlPct(x){ return cost(x) > 0 ? pnl(x) / cost(x) * 100 : 0; }
 
   function calc(data){
     ensure(data);
@@ -176,56 +144,8 @@
     return null;
   }
 
-  async function refreshAllPrices(){
-    const data = ensure(WCStore.get());
-    if (!data.portfolio.length) return alert("ما عندك أسهم حالياً.");
-
-    state.loading = true;
-    render();
-
-    for (const x of data.portfolio) {
-      const live = await fetchPrice(x.symbol);
-      if (live) {
-        x.currentPrice = live.price;
-        x.priceSource = live.source;
-        x.priceUpdatedAt = live.at;
-      }
-    }
-
-    WCStore.set(data);
-    state.loading = false;
-    render();
-  }
-
-  async function fetchNews(){
-    const data = ensure(WCStore.get());
-    const symbols = data.portfolio.map(x => x.symbol).slice(0,8);
-
-    if (!symbols.length) return alert("أضف أسهم أولاً عشان تظهر أخبارها.");
-
-    state.newsLoading = true;
-    render();
-
-    try{
-      const q = encodeURIComponent(symbols.join(" OR ") + " UAE stocks");
-      const rss = `https://news.google.com/rss/search?q=${q}&hl=en-AE&gl=AE&ceid=AE:en`;
-      const api = `https://api.allorigins.win/get?url=${encodeURIComponent(rss)}`;
-      const res = await fetch(api);
-      const json = await res.json();
-      const xml = new DOMParser().parseFromString(json.contents || "", "text/xml");
-
-      state.news = [...xml.querySelectorAll("item")].slice(0,8).map(item => ({
-        title:item.querySelector("title")?.textContent || "خبر",
-        link:item.querySelector("link")?.textContent || "#",
-        date:item.querySelector("pubDate")?.textContent || ""
-      }));
-    }catch(e){
-      state.news = [];
-      alert("الأخبار ما اشتغلت حالياً بسبب قيود المصدر.");
-    }
-
-    state.newsLoading = false;
-    render();
+  function unique(key){
+    return [...new Set(UAE_STOCKS.map(x => x[key]).filter(Boolean))];
   }
 
   function filteredCatalog(){
@@ -233,8 +153,8 @@
     return UAE_STOCKS.filter(x => {
       const txt = `${x.symbol} ${x.ar} ${x.name} ${x.market} ${x.sector}`.toLowerCase();
       return (!q || txt.includes(q)) &&
-             (state.market === "all" || x.market === state.market) &&
-             (state.sector === "all" || x.sector === state.sector);
+        (state.market === "all" || x.market === state.market) &&
+        (state.sector === "all" || x.sector === state.sector);
     });
   }
 
@@ -243,19 +163,15 @@
     return stocks.filter(x => {
       const txt = `${x.symbol} ${x.ar || ""} ${x.name || ""} ${x.market || ""} ${x.sector || ""}`.toLowerCase();
       return (!q || txt.includes(q)) &&
-             (state.market === "all" || x.market === state.market) &&
-             (state.sector === "all" || x.sector === state.sector);
+        (state.market === "all" || x.market === state.market) &&
+        (state.sector === "all" || x.sector === state.sector);
     });
-  }
-
-  function unique(key){
-    return [...new Set(UAE_STOCKS.map(x => x[key]).filter(Boolean))];
   }
 
   function insight(c){
     if (!c.stocks.length) return "أضف أول سهم من القائمة حتى يبدأ التحليل الحقيقي للمحفظة.";
     if (c.totalPnl < 0) return `محفظتك حالياً خسرانة ${money(Math.abs(c.totalPnl))}. راقب الأسهم الضعيفة ولا تزيد التركيز بدون مراجعة.`;
-    if (c.totalReturn > 10) return `الأداء ممتاز بعائد ${c.totalReturn.toFixed(1)}%. راقب التوازن بين القطاعات ولا تركز كل المحفظة في سهم واحد.`;
+    if (c.totalReturn > 10) return `الأداء ممتاز بعائد ${c.totalReturn.toFixed(1)}%. راقب التوازن بين القطاعات.`;
     if (!c.dividends) return "المحفظة موجودة، لكن لا توجد توزيعات مسجلة. أضف التوزيعات لمتابعة الدخل السلبي.";
     return `المحفظة مستقرة بعائد ${c.totalReturn.toFixed(1)}%. حدث الأسعار والأخبار بشكل دوري.`;
   }
@@ -268,7 +184,7 @@
     const selectedPrice = state.prices[state.selected];
 
     page.innerHTML = `
-      <section class="investPageTitle">
+      <section class="investTitle">
         <span>الاستثمارات</span>
         <h2>مركز الاستثمارات</h2>
         <p>إدارة أسهم الإمارات، رأس المال، التوزيعات، الأسعار، والأخبار في مكان واحد.</p>
@@ -296,97 +212,17 @@
         <p>${insight(c)}</p>
       </section>
 
-      <section class="investQuickGrid">
-        <button onclick="PWC_Portfolio.scrollToBox('capitalBox')">💼 رأس مال</button>
+      <section class="investShortcuts">
         <button onclick="PWC_Portfolio.scrollToBox('addStockBox')">➕ إضافة سهم</button>
+        <button onclick="PWC_Portfolio.scrollToBox('capitalBox')">💼 رأس مال</button>
         <button onclick="PWC_Portfolio.scrollToBox('dividendBox')">💸 توزيع</button>
         <button onclick="PWC_Portfolio.refreshAllPrices()">⚡ تحديث الأسعار</button>
       </section>
 
-      <section id="capitalBox" class="investPanel">
-        <div class="investPanelHead">
-          <h3>💼 إضافة رأس مال</h3>
-          <p>سجل المبلغ الذي خصصته للاستثمار، مثل استثمار شهري جديد.</p>
-        </div>
-
-        <div class="investForm">
-          <input id="capitalAmount" type="number" inputmode="decimal" placeholder="المبلغ مثال: 3000" />
-          <input id="capitalDate" class="cleanDateInput" type="date" value="${today()}" />
-          <input id="capitalNote" placeholder="ملاحظة مثال: استثمار شهر يوليو" />
-        </div>
-
-        <button class="mainBtn" onclick="PWC_Portfolio.addCapital()">حفظ رأس المال</button>
-      </section>
-
-      <section class="investPanel">
-        <div class="investPanelHead">
-          <h3>🔎 بحث وفلترة</h3>
-          <p>فلتر محفظتك أو قائمة الأسهم حسب السوق والقطاع.</p>
-        </div>
-
-        <div class="investForm">
-          <input id="pfSearch" value="${state.q}" placeholder="ابحث باسم الشركة / الرمز / القطاع" />
-          <select id="pfMarketFilter">
-            <option value="all">كل الأسواق</option>
-            ${unique("market").map(x => `<option value="${x}" ${state.market === x ? "selected" : ""}>${x}</option>`).join("")}
-          </select>
-          <select id="pfSectorFilter">
-            <option value="all">كل القطاعات</option>
-            ${unique("sector").map(x => `<option value="${x}" ${state.sector === x ? "selected" : ""}>${x}</option>`).join("")}
-          </select>
-        </div>
-
-        <button class="mainBtn" onclick="PWC_Portfolio.applyFilters()">تطبيق الفلترة</button>
-      </section>
-
-      <section id="addStockBox" class="investPanel">
-        <div class="investPanelHead">
-          <h3>➕ إضافة سهم إماراتي</h3>
-          <p>اختر السهم واكتب عدد الأسهم فقط. السعر يحاول النظام جلبه تلقائياً.</p>
-        </div>
-
-        <div class="investForm">
-          <select id="stockSelect" onchange="PWC_Portfolio.selectStock()">
-            <option value="">اختر السهم</option>
-            ${filteredCatalog().map(x => `
-              <option value="${x.symbol}" ${state.selected === x.symbol ? "selected" : ""}>
-                ${x.symbol} - ${x.ar} - ${x.market}
-              </option>
-            `).join("")}
-          </select>
-
-          <input id="stockQty" type="number" inputmode="decimal" placeholder="عدد الأسهم فقط" />
-          <input id="stockDate" class="cleanDateInput" type="date" value="${today()}" />
-          <input id="stockNote" placeholder="ملاحظة اختيارية" />
-        </div>
-
-        ${selectedMeta ? `
-          <div class="selectedStockBox">
-            <strong>${selectedMeta.ar}</strong>
-            <span>${selectedMeta.symbol} • ${selectedMeta.market} • ${selectedMeta.sector}</span>
-            <b>${state.loading ? "جاري جلب السعر..." : selectedPrice ? money(selectedPrice.price) : "السعر غير متوفر حالياً"}</b>
-          </div>
-        ` : ""}
-
-        <button class="mainBtn" onclick="PWC_Portfolio.addStock()">حفظ السهم</button>
-      </section>
-
-      <section class="investPanel">
-        <div class="investPanelHead">
-          <h3>⚡ الأسعار والأخبار</h3>
-          <p>حدث أسعار الأسهم أو اجلب آخر الأخبار المتعلقة بشركات محفظتك.</p>
-        </div>
-
-        <div class="investActionGrid">
-          <button onclick="PWC_Portfolio.refreshAllPrices()">
-            ${state.loading ? "جاري التحديث..." : "تحديث أسعار أسهمي"}
-          </button>
-          <button onclick="PWC_Portfolio.fetchNews()">
-            ${state.newsLoading ? "جاري الجلب..." : "جلب أخبار أسهمي"}
-          </button>
-        </div>
-      </section>
-
+      ${capitalBox()}
+      ${filterBox()}
+      ${addStockBox(selectedMeta, selectedPrice)}
+      ${priceNewsBox()}
       ${newsBlock()}
       ${summaryBlock(c)}
       ${stocksBlock(stocks, c)}
@@ -396,178 +232,245 @@
     `;
   }
 
-  function newsBlock(){
-    if (!state.news.length) {
-      return `
-        <section class="investPanel">
-          <div class="investPanelHead">
-            <h3>📰 أخبار أسهمي</h3>
-            <p>اضغط زر جلب الأخبار لعرض أخبار الشركات الموجودة في محفظتك.</p>
-          </div>
-        </section>
-      `;
-    }
-
+  function panel(id, title, desc, body){
     return `
-      <section class="investPanel">
+      <section ${id ? `id="${id}"` : ""} class="investPanel">
         <div class="investPanelHead">
-          <h3>📰 أخبار أسهمي</h3>
+          <h3>${title}</h3>
+          ${desc ? `<p>${desc}</p>` : ""}
         </div>
-
-        <div class="investList">
-          ${state.news.map(x => `
-            <div class="investRow">
-              <div>
-                <strong>${x.title}</strong>
-                <span>${x.date ? new Date(x.date).toLocaleDateString("ar-AE") : ""}</span>
-              </div>
-              <a href="${x.link}" target="_blank" rel="noopener">فتح</a>
-            </div>
-          `).join("")}
-        </div>
+        ${body}
       </section>
     `;
   }
 
+  function capitalBox(){
+    return panel(
+      "capitalBox",
+      "💼 إضافة رأس مال",
+      "سجل المبلغ الذي خصصته للاستثمار، مثل استثمار شهري جديد.",
+      `
+      <div class="investForm">
+        <input id="capitalAmount" type="number" inputmode="decimal" placeholder="المبلغ مثال: 3000" />
+        <input id="capitalDate" class="dateFix" type="date" value="${today()}" />
+        <input id="capitalNote" placeholder="ملاحظة مثال: استثمار شهر يوليو" />
+      </div>
+      <button class="mainBtn" onclick="PWC_Portfolio.addCapital()">حفظ رأس المال</button>
+      `
+    );
+  }
+
+  function filterBox(){
+    return panel(
+      "",
+      "🔎 بحث وفلترة",
+      "فلتر محفظتك أو قائمة الأسهم حسب السوق والقطاع.",
+      `
+      <div class="investForm">
+        <input id="pfSearch" value="${state.q}" placeholder="ابحث باسم الشركة / الرمز / القطاع" />
+        <select id="pfMarketFilter">
+          <option value="all">كل الأسواق</option>
+          ${unique("market").map(x => `<option value="${x}" ${state.market === x ? "selected" : ""}>${x}</option>`).join("")}
+        </select>
+        <select id="pfSectorFilter">
+          <option value="all">كل القطاعات</option>
+          ${unique("sector").map(x => `<option value="${x}" ${state.sector === x ? "selected" : ""}>${x}</option>`).join("")}
+        </select>
+      </div>
+      <button class="mainBtn" onclick="PWC_Portfolio.applyFilters()">تطبيق الفلترة</button>
+      `
+    );
+  }
+
+  function addStockBox(selectedMeta, selectedPrice){
+    return panel(
+      "addStockBox",
+      "➕ إضافة سهم إماراتي",
+      "اختر السهم واكتب عدد الأسهم فقط. السعر يحاول النظام جلبه تلقائياً.",
+      `
+      <div class="investForm">
+        <select id="stockSelect" onchange="PWC_Portfolio.selectStock()">
+          <option value="">اختر السهم</option>
+          ${filteredCatalog().map(x => `
+            <option value="${x.symbol}" ${state.selected === x.symbol ? "selected" : ""}>
+              ${x.symbol} - ${x.ar} - ${x.market}
+            </option>
+          `).join("")}
+        </select>
+        <input id="stockQty" type="number" inputmode="decimal" placeholder="عدد الأسهم فقط" />
+        <input id="stockDate" class="dateFix" type="date" value="${today()}" />
+        <input id="stockNote" placeholder="ملاحظة اختيارية" />
+      </div>
+
+      ${selectedMeta ? `
+        <div class="selectedStockBox">
+          <strong>${selectedMeta.ar}</strong>
+          <span>${selectedMeta.symbol} • ${selectedMeta.market} • ${selectedMeta.sector}</span>
+          <b>${state.loading ? "جاري جلب السعر..." : selectedPrice ? money(selectedPrice.price) : "السعر غير متوفر حالياً"}</b>
+        </div>
+      ` : ""}
+
+      <button class="mainBtn" onclick="PWC_Portfolio.addStock()">حفظ السهم</button>
+      `
+    );
+  }
+
+  function priceNewsBox(){
+    return panel(
+      "",
+      "⚡ الأسعار والأخبار",
+      "حدث أسعار الأسهم أو اجلب آخر الأخبار المتعلقة بشركات محفظتك.",
+      `
+      <div class="investActionGrid">
+        <button onclick="PWC_Portfolio.refreshAllPrices()">${state.loading ? "جاري التحديث..." : "تحديث أسعار أسهمي"}</button>
+        <button onclick="PWC_Portfolio.fetchNews()">${state.newsLoading ? "جاري الجلب..." : "جلب أخبار أسهمي"}</button>
+      </div>
+      `
+    );
+  }
+
+  function newsBlock(){
+    if (!state.news.length) {
+      return panel("", "📰 أخبار أسهمي", "اضغط زر جلب الأخبار لعرض أخبار الشركات الموجودة في محفظتك.", "");
+    }
+
+    return panel(
+      "",
+      "📰 أخبار أسهمي",
+      "",
+      `
+      <div class="investList">
+        ${state.news.map(x => `
+          <div class="investRow">
+            <div>
+              <strong>${x.title}</strong>
+              <span>${x.date ? new Date(x.date).toLocaleDateString("ar-AE") : ""}</span>
+            </div>
+            <a href="${x.link}" target="_blank" rel="noopener">فتح</a>
+          </div>
+        `).join("")}
+      </div>
+      `
+    );
+  }
+
   function summaryBlock(c){
-    return `
-      <section class="investPanel">
-        <div class="investPanelHead">
-          <h3>📌 ملخص الاستثمارات</h3>
+    return panel(
+      "",
+      "📌 ملخص الاستثمارات",
+      "",
+      `
+      <div class="investList">
+        <div class="investRow">
+          <div><strong>أفضل سهم</strong><span>${c.best ? `${c.best.ar || c.best.symbol} • ${pnlPct(c.best).toFixed(1)}%` : "لا يوجد"}</span></div>
+          <b>${c.best ? money(pnl(c.best)) : money(0)}</b>
         </div>
-
-        <div class="investList">
-          <div class="investRow">
-            <div><strong>أفضل سهم</strong><span>${c.best ? `${c.best.ar || c.best.symbol} • ${pnlPct(c.best).toFixed(1)}%` : "لا يوجد"}</span></div>
-            <b>${c.best ? money(pnl(c.best)) : money(0)}</b>
-          </div>
-
-          <div class="investRow">
-            <div><strong>أضعف سهم</strong><span>${c.worst ? `${c.worst.ar || c.worst.symbol} • ${pnlPct(c.worst).toFixed(1)}%` : "لا يوجد"}</span></div>
-            <b>${c.worst ? money(pnl(c.worst)) : money(0)}</b>
-          </div>
-
-          <div class="investRow">
-            <div><strong>إجمالي رأس المال</strong><span>كل المبالغ التي أضفتها</span></div>
-            <b>${money(c.capital)}</b>
-          </div>
+        <div class="investRow">
+          <div><strong>أضعف سهم</strong><span>${c.worst ? `${c.worst.ar || c.worst.symbol} • ${pnlPct(c.worst).toFixed(1)}%` : "لا يوجد"}</span></div>
+          <b>${c.worst ? money(pnl(c.worst)) : money(0)}</b>
         </div>
-      </section>
-    `;
+        <div class="investRow">
+          <div><strong>إجمالي رأس المال</strong><span>كل المبالغ التي أضفتها</span></div>
+          <b>${money(c.capital)}</b>
+        </div>
+      </div>
+      `
+    );
   }
 
   function stocksBlock(stocks, c){
     if (!stocks.length) {
-      return `
-        <section class="investPanel">
-          <div class="investPanelHead">
-            <h3>📋 الأسهم</h3>
-            <p>لا توجد أسهم مطابقة حالياً.</p>
-          </div>
-        </section>
-      `;
+      return panel("", "📋 الأسهم", "لا توجد أسهم مطابقة حالياً.", "");
     }
 
-    return `
-      <section class="investPanel">
-        <div class="investPanelHead">
-          <h3>📋 الأسهم</h3>
-          <p>كل سهم مع الكمية، السعر، الربح، الوزن، والتحديث.</p>
-        </div>
+    return panel(
+      "",
+      "📋 الأسهم",
+      "كل سهم مع الكمية، السعر، الربح، الوزن، والتحديث.",
+      stocks.map(x => {
+        const v = value(x);
+        const p = pnl(x);
+        const weight = c.totalValue > 0 ? v / c.totalValue * 100 : 0;
 
-        ${stocks.map(x => {
-          const v = value(x);
-          const p = pnl(x);
-          const weight = c.totalValue > 0 ? v / c.totalValue * 100 : 0;
-
-          return `
-            <div class="stockCardV2">
-              <div class="stockHeaderV2">
-                <h3>${p >= 0 ? "🟢" : "🔴"} ${x.ar || x.symbol}</h3>
-                <span>${x.symbol} • ${x.market}</span>
-              </div>
-
-              <div class="stockMiniGrid">
-                <div><small>القطاع</small><strong>${x.sector || "-"}</strong></div>
-                <div><small>الكمية</small><strong>${n(x.quantity)}</strong></div>
-                <div><small>متوسط الشراء</small><strong>${n(x.avgPrice).toFixed(3)}</strong></div>
-                <div><small>السعر الحالي</small><strong>${n(x.currentPrice).toFixed(3)}</strong></div>
-                <div><small>القيمة</small><strong>${money(v)}</strong></div>
-                <div><small>الربح / الخسارة</small><strong class="${p < 0 ? "lossText" : "gainText"}">${money(p)}</strong></div>
-              </div>
-
-              <p class="stockNoteLine">العائد ${pnlPct(x).toFixed(1)}% • الوزن من المحفظة ${weight.toFixed(1)}%</p>
-
-              <div class="stockBuyMore">
-                <input id="moreQty_${x.id}" type="number" inputmode="decimal" placeholder="كم سهم اشتريت زيادة؟" />
-                <input id="moreDate_${x.id}" class="cleanDateInput" type="date" value="${today()}" />
-              </div>
-
-              <div class="stockBtnGrid">
-                <button onclick="PWC_Portfolio.addMore('${x.id}')">➕ شراء إضافي</button>
-                <button onclick="PWC_Portfolio.updateOne('${x.id}')">🔄 تحديث</button>
-                <button class="dangerBtn" onclick="PWC_Portfolio.removeStock('${x.id}')">🗑 حذف</button>
-              </div>
+        return `
+          <div class="stockCardV2">
+            <div class="stockHeaderV2">
+              <h3>${p >= 0 ? "🟢" : "🔴"} ${x.ar || x.symbol}</h3>
+              <span>${x.symbol} • ${x.market}</span>
             </div>
-          `;
-        }).join("")}
-      </section>
-    `;
+
+            <div class="stockMiniGrid">
+              <div><small>القطاع</small><strong>${x.sector || "-"}</strong></div>
+              <div><small>الكمية</small><strong>${n(x.quantity)}</strong></div>
+              <div><small>متوسط الشراء</small><strong>${n(x.avgPrice).toFixed(3)}</strong></div>
+              <div><small>السعر الحالي</small><strong>${n(x.currentPrice).toFixed(3)}</strong></div>
+              <div><small>القيمة</small><strong>${money(v)}</strong></div>
+              <div><small>الربح / الخسارة</small><strong class="${p < 0 ? "lossText" : "gainText"}">${money(p)}</strong></div>
+            </div>
+
+            <p class="stockNoteLine">العائد ${pnlPct(x).toFixed(1)}% • الوزن من المحفظة ${weight.toFixed(1)}%</p>
+
+            <div class="stockBuyMore">
+              <input id="moreQty_${x.id}" type="number" inputmode="decimal" placeholder="كم سهم اشتريت زيادة؟" />
+              <input id="moreDate_${x.id}" class="dateFix" type="date" value="${today()}" />
+            </div>
+
+            <div class="stockBtnGrid">
+              <button onclick="PWC_Portfolio.addMore('${x.id}')">➕ شراء إضافي</button>
+              <button onclick="PWC_Portfolio.updateOne('${x.id}')">🔄 تحديث</button>
+              <button class="dangerBtn" onclick="PWC_Portfolio.removeStock('${x.id}')">🗑 حذف</button>
+            </div>
+          </div>
+        `;
+      }).join("")
+    );
   }
 
   function dividendBlock(){
     const data = ensure(WCStore.get());
 
-    return `
-      <section id="dividendBox" class="investPanel">
-        <div class="investPanelHead">
-          <h3>💸 إضافة توزيع</h3>
-          <p>سجل توزيعات الأرباح للشركات الموجودة في محفظتك.</p>
-        </div>
-
-        <div class="investForm">
-          <select id="divSymbol">
-            <option value="">اختر الشركة</option>
-            ${data.portfolio.map(x => `<option value="${x.symbol}">${x.symbol} - ${x.ar || x.name || ""}</option>`).join("")}
-          </select>
-
-          <input id="divAmount" type="number" inputmode="decimal" placeholder="قيمة التوزيع" />
-          <input id="divDate" class="cleanDateInput" type="date" value="${today()}" />
-          <input id="divNote" placeholder="ملاحظة اختيارية" />
-        </div>
-
-        <button class="mainBtn" onclick="PWC_Portfolio.addDividend()">حفظ التوزيع</button>
-      </section>
-    `;
+    return panel(
+      "dividendBox",
+      "💸 إضافة توزيع",
+      "سجل توزيعات الأرباح للشركات الموجودة في محفظتك.",
+      `
+      <div class="investForm">
+        <select id="divSymbol">
+          <option value="">اختر الشركة</option>
+          ${data.portfolio.map(x => `<option value="${x.symbol}">${x.symbol} - ${x.ar || x.name || ""}</option>`).join("")}
+        </select>
+        <input id="divAmount" type="number" inputmode="decimal" placeholder="قيمة التوزيع" />
+        <input id="divDate" class="dateFix" type="date" value="${today()}" />
+        <input id="divNote" placeholder="ملاحظة اختيارية" />
+      </div>
+      <button class="mainBtn" onclick="PWC_Portfolio.addDividend()">حفظ التوزيع</button>
+      `
+    );
   }
 
   function distributionBlock(title, obj, total){
     const rows = Object.entries(obj || {}).sort((a,b) => b[1] - a[1]);
     if (!rows.length) return "";
 
-    return `
-      <section class="investPanel">
-        <div class="investPanelHead">
-          <h3>📊 ${title}</h3>
-        </div>
-
-        <div class="investDistList">
-          ${rows.map(([name, amount]) => {
-            const p = total > 0 ? amount / total * 100 : 0;
-            return `
-              <div class="distRow">
-                <div>
-                  <strong>${name}</strong>
-                  <span>${money(amount)}</span>
-                </div>
-                <b>${p.toFixed(1)}%</b>
-              </div>
-              <div class="progressBar"><div class="progressFill" style="width:${Math.min(p,100)}%"></div></div>
-            `;
-          }).join("")}
-        </div>
-      </section>
-    `;
+    return panel(
+      "",
+      `📊 ${title}`,
+      "",
+      `
+      <div class="investDistList">
+        ${rows.map(([name, amount]) => {
+          const p = total > 0 ? amount / total * 100 : 0;
+          return `
+            <div class="distRow">
+              <div><strong>${name}</strong><span>${money(amount)}</span></div>
+              <b>${p.toFixed(1)}%</b>
+            </div>
+            <div class="progressBar"><div class="progressFill" style="width:${Math.min(p,100)}%"></div></div>
+          `;
+        }).join("")}
+      </div>
+      `
+    );
   }
 
   function applyFilters(){
@@ -621,10 +524,10 @@
         existing.priceUpdatedAt = live.at;
         existing.priceSource = live.source;
         existing.transactions = arr(existing.transactions);
-        existing.transactions.push({id:id(), type:"buy", quantity, price, date, note});
+        existing.transactions.push({id:uid(), type:"buy", quantity, price, date, note});
       } else {
         data.portfolio.push({
-          id:id(),
+          id:uid(),
           symbol,
           ar:m.ar,
           name:m.name,
@@ -635,7 +538,7 @@
           currentPrice:price,
           priceSource:live.source,
           priceUpdatedAt:live.at,
-          transactions:[{id:id(), type:"buy", quantity, price, date, note}],
+          transactions:[{id:uid(), type:"buy", quantity, price, date, note}],
           createdAt:today()
         });
       }
@@ -668,7 +571,7 @@
     x.priceUpdatedAt = live.at;
     x.priceSource = live.source;
     x.transactions = arr(x.transactions);
-    x.transactions.push({id:id(), type:"buy", quantity, price:live.price, date});
+    x.transactions.push({id:uid(), type:"buy", quantity, price:live.price, date});
 
     WCStore.set(data);
   }
@@ -703,7 +606,7 @@
     WCStore.update(data => {
       ensure(data);
       data.dividends.push({
-        id:id(),
+        id:uid(),
         symbol,
         amount,
         date:val("divDate") || today(),
@@ -720,7 +623,7 @@
     WCStore.update(data => {
       ensure(data);
       data.capitalContributions.push({
-        id:id(),
+        id:uid(),
         amount,
         date:val("capitalDate") || today(),
         note:val("capitalNote"),
@@ -729,23 +632,79 @@
     });
   }
 
+  async function refreshAllPrices(){
+    const data = ensure(WCStore.get());
+    if (!data.portfolio.length) return alert("ما عندك أسهم حالياً.");
+
+    state.loading = true;
+    render();
+
+    for (const x of data.portfolio) {
+      const live = await fetchPrice(x.symbol);
+      if (live) {
+        x.currentPrice = live.price;
+        x.priceSource = live.source;
+        x.priceUpdatedAt = live.at;
+      }
+    }
+
+    WCStore.set(data);
+    state.loading = false;
+    render();
+  }
+
+  async function fetchNews(){
+    const data = ensure(WCStore.get());
+    const symbols = data.portfolio.map(x => x.symbol).slice(0,8);
+
+    if (!symbols.length) return alert("أضف أسهم أولاً عشان تظهر أخبارها.");
+
+    state.newsLoading = true;
+    render();
+
+    try{
+      const q = encodeURIComponent(symbols.join(" OR ") + " UAE stocks");
+      const rss = `https://news.google.com/rss/search?q=${q}&hl=en-AE&gl=AE&ceid=AE:en`;
+      const api = `https://api.allorigins.win/get?url=${encodeURIComponent(rss)}`;
+      const res = await fetch(api);
+      const json = await res.json();
+      const xml = new DOMParser().parseFromString(json.contents || "", "text/xml");
+
+      state.news = [...xml.querySelectorAll("item")].slice(0,8).map(item => ({
+        title:item.querySelector("title")?.textContent || "خبر",
+        link:item.querySelector("link")?.textContent || "#",
+        date:item.querySelector("pubDate")?.textContent || ""
+      }));
+    }catch(e){
+      state.news = [];
+      alert("الأخبار ما اشتغلت حالياً بسبب قيود المصدر.");
+    }
+
+    state.newsLoading = false;
+    render();
+  }
+
   function scrollToBox(boxId){
     const box = document.getElementById(boxId);
     if (box) box.scrollIntoView({behavior:"smooth", block:"start"});
   }
 
-  function injectInvestmentCSS(){
-    if (document.getElementById("investmentsV22CSS")) return;
+  function injectCSS(){
+    if (document.getElementById("investmentsV23CSS")) return;
 
     const css = document.createElement("style");
-    css.id = "investmentsV22CSS";
+    css.id = "investmentsV23CSS";
     css.innerHTML = `
-      .investPageTitle{
-        margin:12px 0 22px;
+      #portfolio{
+        padding-bottom:155px !important;
+      }
+
+      .investTitle{
+        margin:10px 0 22px;
         text-align:right;
       }
 
-      .investPageTitle span{
+      .investTitle span{
         display:inline-block;
         background:#fff7df;
         color:#d4af37;
@@ -756,7 +715,7 @@
         margin-bottom:12px;
       }
 
-      .investPageTitle h2{
+      .investTitle h2{
         margin:0 0 8px;
         color:#0b1020;
         font-size:34px;
@@ -764,7 +723,7 @@
         line-height:1.25;
       }
 
-      .investPageTitle p{
+      .investTitle p{
         margin:0;
         color:#667085;
         font-size:16px;
@@ -804,22 +763,23 @@
         line-height:1.8;
       }
 
-      .investQuickGrid{
+      .investShortcuts{
         display:grid;
         grid-template-columns:repeat(2,1fr);
         gap:10px;
         margin-bottom:22px;
       }
 
-      .investQuickGrid button,
+      .investShortcuts button,
       .investActionGrid button,
       .stockBtnGrid button{
+        width:100%;
         border:none;
         background:#0b1020;
         color:#f6c945;
         border-radius:18px;
-        padding:14px 10px;
-        font-size:14px;
+        padding:15px 10px;
+        font-size:15px;
         font-weight:1000;
         font-family:inherit;
       }
@@ -851,22 +811,12 @@
         display:block;
       }
 
-      .investForm input:focus,
-      .investForm select:focus,
-      .stockBuyMore input:focus{
-        border-color:#d4af37;
-        background:#fff;
-        box-shadow:0 0 0 4px rgba(212,175,55,.12);
-      }
-
-      .investForm input[type="date"],
-      .stockBuyMore input[type="date"],
-      .cleanDateInput{
+      .dateFix{
         direction:ltr !important;
         text-align:center !important;
-        appearance:none;
-        -webkit-appearance:none;
-        line-height:58px;
+        appearance:none !important;
+        -webkit-appearance:none !important;
+        line-height:58px !important;
         padding:0 14px !important;
       }
 
@@ -977,16 +927,11 @@
         box-shadow:0 12px 30px rgba(15,23,42,.06);
       }
 
-      .stockHeaderV2{
-        margin-bottom:14px;
-      }
-
       .stockHeaderV2 h3{
         margin:0 0 6px;
         color:#0b1020;
         font-size:25px;
         font-weight:1000;
-        line-height:1.25;
       }
 
       .stockHeaderV2 span{
@@ -999,6 +944,7 @@
         display:grid;
         grid-template-columns:repeat(2,1fr);
         gap:10px;
+        margin-top:14px;
       }
 
       .stockMiniGrid div{
@@ -1100,7 +1046,7 @@
       }
 
       @media(max-width:430px){
-        .investPageTitle h2{
+        .investTitle h2{
           font-size:30px;
         }
 
@@ -1123,13 +1069,8 @@
           border-radius:17px;
         }
 
-        .investForm input[type="date"],
-        .stockBuyMore input[type="date"]{
-          line-height:56px;
-        }
-
-        .stockHeaderV2 h3{
-          font-size:23px;
+        .dateFix{
+          line-height:56px !important;
         }
 
         .stockMiniGrid{
