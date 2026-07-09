@@ -1,7 +1,7 @@
 /* =========================================================
    Personal Wealth Center
-   Portfolio V3.3 Ultimate Premium
-   Compact Hero + 2x2 KPIs + Quick Edit + Compact Formula
+   Portfolio V3.4 Ultimate Premium
+   Fixed Permanent Storage + Home Sync
    File: js/portfolio.js
 ========================================================= */
 
@@ -12,8 +12,9 @@
   if (!page) return;
 
   const APP_KEY = "pwcDataV1";
+  const BACKUP_KEY = "pwcBackupV1";
   const SETTINGS_KEY = "pwcSettingsV1";
-  const VERSION = "3.3.0";
+  const VERSION = "3.4.0";
   const GOALS = [100000, 250000, 500000, 1000000];
 
   const DEFAULT_PORTFOLIO = {
@@ -28,9 +29,19 @@
 
   const DEFAULT_DATA = {
     meta: { version: VERSION, updatedAt: null },
-    portfolio: structuredClone(DEFAULT_PORTFOLIO),
-    assets: { cash: 0, investments: 0, realEstate: 0, other: 0 },
+    settings: {},
+    spendingSettings: {},
+    portfolio: { ...DEFAULT_PORTFOLIO },
+    assets: {
+      cash: 0,
+      emergencyCash: 0,
+      investments: 0,
+      realEstate: 0,
+      other: 0
+    },
     liabilities: { total: 0, items: [] },
+    dividends: [],
+    expenses: [],
     goals: { targetNetWorth: 1000000 }
   };
 
@@ -58,12 +69,18 @@
   }
 
   function saveJSON(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      console.error("PWC save error:", key, e);
+      return false;
+    }
   }
 
   function num(v, fallback = 0) {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
+    const x = Number(String(v ?? "").replace(/,/g, ""));
+    return Number.isFinite(x) ? x : fallback;
   }
 
   function safeText(v) {
@@ -114,76 +131,155 @@
 
   const EventBus = window.PWCEvents || {
     emit(name, detail) {
-      window.dispatchEvent(new CustomEvent(name, { detail }));
+      try {
+        window.dispatchEvent(new CustomEvent(name, { detail }));
+        document.dispatchEvent(new CustomEvent(name, { detail }));
+      } catch (e) {}
     },
     on(name, handler) {
       window.addEventListener(name, handler);
+      document.addEventListener(name, handler);
     }
   };
 
   window.PWCEvents = EventBus;
 
+  function normalizeData(raw) {
+    const data = Object.assign({}, clone(DEFAULT_DATA), raw || {});
+
+    data.meta = Object.assign({}, clone(DEFAULT_DATA.meta), data.meta || {});
+    data.settings = Object.assign({}, data.settings || {});
+    data.spendingSettings = Object.assign({}, data.spendingSettings || {});
+
+    if (!data.portfolio || Array.isArray(data.portfolio) || typeof data.portfolio !== "object") {
+      data.portfolio = clone(DEFAULT_PORTFOLIO);
+    } else {
+      data.portfolio = Object.assign({}, clone(DEFAULT_PORTFOLIO), data.portfolio || {});
+    }
+
+    data.portfolio.capital = num(data.portfolio.capital);
+    data.portfolio.currentValue = num(data.portfolio.currentValue);
+    data.portfolio.monthlyInvestment = num(data.portfolio.monthlyInvestment, 3500);
+    data.portfolio.expectedReturn = num(data.portfolio.expectedReturn, 10);
+    data.portfolio.notes = String(data.portfolio.notes || "");
+    if (!Array.isArray(data.portfolio.purchases)) data.portfolio.purchases = [];
+
+    if (!data.assets || Array.isArray(data.assets) || typeof data.assets !== "object") {
+      data.assets = clone(DEFAULT_DATA.assets);
+    } else {
+      data.assets = Object.assign({}, clone(DEFAULT_DATA.assets), data.assets || {});
+    }
+
+    data.assets.investments = num(data.portfolio.currentValue);
+
+    if (!data.liabilities || Array.isArray(data.liabilities) || typeof data.liabilities !== "object") {
+      data.liabilities = clone(DEFAULT_DATA.liabilities);
+    }
+
+    if (!Array.isArray(data.dividends)) data.dividends = [];
+    if (!Array.isArray(data.expenses)) data.expenses = [];
+    if (!data.goals || typeof data.goals !== "object") data.goals = clone(DEFAULT_DATA.goals);
+
+    return data;
+  }
+
   const Store = {
     getSettings() {
-      if (window.WCStore && typeof window.WCStore.getSettings === "function") {
-        return Object.assign({}, DEFAULT_SETTINGS, window.WCStore.getSettings());
-      }
+      let settings = Object.assign({}, DEFAULT_SETTINGS, readJSON(SETTINGS_KEY, {}));
 
-      if (window.PWCStore && typeof window.PWCStore.getSettings === "function") {
-        return Object.assign({}, DEFAULT_SETTINGS, window.PWCStore.getSettings());
-      }
+      try {
+        if (window.WCStore && typeof window.WCStore.getSettings === "function") {
+          settings = Object.assign(settings, window.WCStore.getSettings() || {});
+        }
+      } catch (e) {}
 
-      return Object.assign({}, DEFAULT_SETTINGS, readJSON(SETTINGS_KEY, {}));
+      try {
+        if (window.PWCStore && typeof window.PWCStore.getSettings === "function") {
+          settings = Object.assign(settings, window.PWCStore.getSettings() || {});
+        }
+      } catch (e) {}
+
+      const data = readJSON(APP_KEY, {});
+      settings = Object.assign(settings, data.settings || {});
+
+      return settings;
     },
 
     getData() {
-      let data;
+      let data = readJSON(APP_KEY, DEFAULT_DATA);
 
-      if (window.WCStore && typeof window.WCStore.getState === "function") {
-        data = window.WCStore.getState();
-      } else if (window.WCStore && typeof window.WCStore.getData === "function") {
-        data = window.WCStore.getData();
-      } else if (window.PWCStore && typeof window.PWCStore.getState === "function") {
-        data = window.PWCStore.getState();
-      } else if (window.PWCStore && typeof window.PWCStore.getData === "function") {
-        data = window.PWCStore.getData();
-      } else {
-        data = readJSON(APP_KEY, DEFAULT_DATA);
+      if (!data || typeof data !== "object") {
+        data = readJSON(BACKUP_KEY, DEFAULT_DATA);
       }
 
-      data = Object.assign({}, clone(DEFAULT_DATA), data || {});
-      data.portfolio = Object.assign({}, clone(DEFAULT_PORTFOLIO), data.portfolio || {});
+      try {
+        if (window.WCStore && typeof window.WCStore.getState === "function") {
+          const d = window.WCStore.getState();
+          if (d && typeof d === "object") data = Object.assign({}, data, d);
+        } else if (window.WCStore && typeof window.WCStore.getData === "function") {
+          const d = window.WCStore.getData();
+          if (d && typeof d === "object") data = Object.assign({}, data, d);
+        } else if (window.WCStore && typeof window.WCStore.get === "function") {
+          const d = window.WCStore.get();
+          if (d && typeof d === "object") data = Object.assign({}, data, d);
+        }
+      } catch (e) {}
 
-      if (!Array.isArray(data.portfolio.purchases)) data.portfolio.purchases = [];
-      if (!data.assets) data.assets = clone(DEFAULT_DATA.assets);
-      if (!data.liabilities) data.liabilities = clone(DEFAULT_DATA.liabilities);
-      if (!data.goals) data.goals = clone(DEFAULT_DATA.goals);
-      if (!data.meta) data.meta = clone(DEFAULT_DATA.meta);
+      try {
+        if (window.PWCStore && typeof window.PWCStore.getState === "function") {
+          const d = window.PWCStore.getState();
+          if (d && typeof d === "object") data = Object.assign({}, data, d);
+        } else if (window.PWCStore && typeof window.PWCStore.getData === "function") {
+          const d = window.PWCStore.getData();
+          if (d && typeof d === "object") data = Object.assign({}, data, d);
+        }
+      } catch (e) {}
 
-      return data;
+      return normalizeData(data);
     },
 
     setData(data, reason = "portfolio:update") {
-      data.meta = data.meta || {};
+      data = normalizeData(data);
+
       data.meta.version = VERSION;
       data.meta.updatedAt = new Date().toISOString();
+      data.portfolio.updatedAt = data.portfolio.updatedAt || new Date().toISOString();
+      data.assets.investments = num(data.portfolio.currentValue);
 
-      if (window.WCStore && typeof window.WCStore.setState === "function") {
-        window.WCStore.setState(data, reason);
-      } else if (window.WCStore && typeof window.WCStore.saveData === "function") {
-        window.WCStore.saveData(data, reason);
-      } else if (window.PWCStore && typeof window.PWCStore.setState === "function") {
-        window.PWCStore.setState(data, reason);
-      } else if (window.PWCStore && typeof window.PWCStore.saveData === "function") {
-        window.PWCStore.saveData(data, reason);
-      } else {
-        saveJSON(APP_KEY, data);
-      }
+      saveJSON(APP_KEY, data);
+      saveJSON(BACKUP_KEY, data);
 
-      EventBus.emit("pwc:dataUpdated", { reason, data });
-      EventBus.emit("pwc:portfolioUpdated", { reason, portfolio: data.portfolio, data });
-      EventBus.emit("pwc:assetsUpdated", { reason, assets: data.assets, data });
-      EventBus.emit("pwc:netWorthUpdated", { reason, data });
+      try {
+        if (window.WCStore && typeof window.WCStore.setState === "function") {
+          window.WCStore.setState(data, reason);
+        } else if (window.WCStore && typeof window.WCStore.saveData === "function") {
+          window.WCStore.saveData(data, reason);
+        }
+      } catch (e) {}
+
+      try {
+        if (window.PWCStore && typeof window.PWCStore.setState === "function") {
+          window.PWCStore.setState(data, reason);
+        } else if (window.PWCStore && typeof window.PWCStore.saveData === "function") {
+          window.PWCStore.saveData(data, reason);
+        }
+      } catch (e) {}
+
+      const detail = { reason, data, portfolio: data.portfolio, assets: data.assets };
+
+      [
+        "pwc:dataChanged",
+        "pwc:portfolioChanged",
+        "pwc:dataUpdated",
+        "pwc:portfolioUpdated",
+        "pwc:assetsUpdated",
+        "pwc:netWorthUpdated",
+        "dataChanged",
+        "portfolioChanged",
+        "assetsChanged"
+      ].forEach((ev) => EventBus.emit(ev, detail));
+
+      return data;
     }
   };
 
@@ -319,11 +415,15 @@
 
     Store.setData(data, "portfolio:purchase_added");
   }
-
-  function deletePurchase(id) {
+  
+    function deletePurchase(id) {
     const data = Store.getData();
     data.portfolio.purchases = data.portfolio.purchases.filter((x) => x.id !== id);
     data.portfolio.updatedAt = new Date().toISOString();
+
+    data.assets = data.assets || {};
+    data.assets.investments = data.portfolio.currentValue;
+
     Store.setData(data, "portfolio:purchase_deleted");
   }
 
@@ -333,6 +433,10 @@
     const data = Store.getData();
     data.portfolio.purchases = [];
     data.portfolio.updatedAt = new Date().toISOString();
+
+    data.assets = data.assets || {};
+    data.assets.investments = data.portfolio.currentValue;
+
     Store.setData(data, "portfolio:purchases_cleared");
   }
 
@@ -737,7 +841,7 @@
         </div>
 
         <div class="pfProfitBox">
-          <div class="pfProfitLabel">إجمالي الربح / الخسارة المحققة</div>
+          <div class="pfProfitLabel">إجمالي الربح / الخسارة</div>
           <div class="pfProfitValue">${c.profit >= 0 ? "+" : ""}${money(c.profit)}</div>
           <div class="pfProfitSub">${pct(c.returnPct)} مقارنة برأس المال ${money(c.capital)}</div>
         </div>
@@ -946,7 +1050,8 @@
     updateMain,
     addPurchase,
     deletePurchase,
-    clearPurchases
+    clearPurchases,
+    Store
   };
 
   EventBus.on("pwc:dataUpdated", function (e) {
@@ -957,6 +1062,7 @@
   EventBus.on("pwc:settingsUpdated", render);
   EventBus.on("pwc:assetsUpdated", render);
   EventBus.on("pwc:liabilitiesUpdated", render);
+
   window.addEventListener("storage", render);
 
   render();
