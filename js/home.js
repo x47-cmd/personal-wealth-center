@@ -1,7 +1,7 @@
 /* ==========================================================
    Personal Wealth Center Home Page
-   Version: 2.2.0
-   Fixed Data Integration
+   Version: 2.3.0
+   Fixed Home Integration + Removed Bottom Shortcuts
 ========================================================== */
 "use strict";
 
@@ -9,10 +9,11 @@
   const page = document.getElementById("home");
   if (!page) return;
 
-  const VERSION = "2.2.0";
+  const VERSION = "2.3.0";
 
   const STORAGE_KEYS = [
     "pwcDataV1",
+    "pwcBackupV1",
     "personalWealthData",
     "wealthData",
     "pwcStore"
@@ -21,10 +22,6 @@
   function n(v, fallback = 0) {
     const x = Number(String(v ?? "").replace(/,/g, ""));
     return Number.isFinite(x) ? x : fallback;
-  }
-
-  function arr(v) {
-    return Array.isArray(v) ? v : [];
   }
 
   function readJSON(key, fallback) {
@@ -36,37 +33,45 @@
     }
   }
 
-  function getData() {
-    let data = {};
-
-    try {
-      if (window.WCStore && typeof WCStore.get === "function") {
-        data = WCStore.get() || {};
-      }
-    } catch (e) {}
-
-    STORAGE_KEYS.forEach(k => {
-      const d = readJSON(k, null);
-      if (d && typeof d === "object") data = { ...d, ...data };
-    });
-
-    return {
-      settings: data.settings || {},
-      spendingSettings: data.spendingSettings || {},
-      portfolio: arr(data.portfolio || data.stocks || data.investments),
-      assets: arr(data.assets),
-      liabilities: arr(data.liabilities || data.debts),
-      dividends: arr(data.dividends || data.distributions),
-      expenses: arr(data.expenses || data.spending || data.transactions)
-    };
+  function toArray(v) {
+    if (Array.isArray(v)) return v;
+    if (v && typeof v === "object") return [v];
+    return [];
   }
 
-  function today() {
-    return new Date().toISOString().slice(0, 10);
+  function objectValuesSum(obj, keysToSkip = []) {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return 0;
+
+    return Object.keys(obj).reduce((total, key) => {
+      if (keysToSkip.includes(key)) return total;
+
+      const value = obj[key];
+
+      if (typeof value === "number" || typeof value === "string") {
+        return total + n(value);
+      }
+
+      if (Array.isArray(value)) {
+        return total + value.reduce((s, x) => {
+          if (typeof x === "number" || typeof x === "string") return s + n(x);
+          if (x && typeof x === "object") {
+            return s + n(x.value ?? x.amount ?? x.balance ?? x.currentValue ?? 0);
+          }
+          return s;
+        }, 0);
+      }
+
+      if (value && typeof value === "object") {
+        return total + n(value.value ?? value.amount ?? value.balance ?? value.currentValue ?? 0);
+      }
+
+      return total;
+    }, 0);
   }
 
   function monthKey(date) {
-    return String(date || today()).slice(0, 7);
+    const d = date || new Date().toISOString().slice(0, 10);
+    return String(d).slice(0, 7);
   }
 
   function money(v) {
@@ -77,12 +82,80 @@
   }
 
   function sum(list, picker) {
-    return arr(list).reduce((s, x) => s + n(picker(x)), 0);
+    return toArray(list).reduce((s, x) => s + n(picker(x)), 0);
   }
 
   function pct(part, total) {
-    if (n(total) <= 0) return 0;
-    return Math.max(0, Math.min((n(part) / n(total)) * 100, 999));
+    total = n(total);
+    if (total <= 0) return 0;
+    return Math.max(0, Math.min((n(part) / total) * 100, 999));
+  }
+
+  function getStoreData() {
+    let data = {};
+
+    STORAGE_KEYS.forEach((key) => {
+      const d = readJSON(key, null);
+      if (d && typeof d === "object") data = { ...data, ...d };
+    });
+
+    try {
+      if (window.WCStore && typeof window.WCStore.get === "function") {
+        const d = window.WCStore.get() || {};
+        data = { ...data, ...d };
+      } else if (window.WCStore && typeof window.WCStore.getState === "function") {
+        const d = window.WCStore.getState() || {};
+        data = { ...data, ...d };
+      } else if (window.WCStore && typeof window.WCStore.getData === "function") {
+        const d = window.WCStore.getData() || {};
+        data = { ...data, ...d };
+      }
+    } catch (e) {}
+
+    try {
+      if (window.PWCStore && typeof window.PWCStore.getState === "function") {
+        const d = window.PWCStore.getState() || {};
+        data = { ...data, ...d };
+      } else if (window.PWCStore && typeof window.PWCStore.getData === "function") {
+        const d = window.PWCStore.getData() || {};
+        data = { ...data, ...d };
+      }
+    } catch (e) {}
+
+    return data || {};
+  }
+
+  function normalizePortfolio(portfolio, data) {
+    const p = portfolio || data.portfolio || data.stocks || data.investments || {};
+
+    if (Array.isArray(p)) return p;
+
+    if (p && typeof p === "object") {
+      return [{
+        currentValue:
+          p.currentValue ??
+          p.marketValue ??
+          p.value ??
+          p.totalValue ??
+          p.portfolioValue ??
+          p.current ??
+          data.assets?.investments ??
+          0,
+
+        costValue:
+          p.capital ??
+          p.costValue ??
+          p.totalCost ??
+          p.deposited ??
+          p.cost ??
+          0,
+
+        monthlyInvestment: p.monthlyInvestment ?? 0,
+        expectedReturn: p.expectedReturn ?? 0
+      }];
+    }
+
+    return [];
   }
 
   function getPortfolioValue(list) {
@@ -115,31 +188,41 @@
     });
   }
 
-  function calc(data) {
-    const settings = data.settings;
+  function calc() {
+    const data = getStoreData();
+
+    const settings = {
+      ...(readJSON("pwcSettingsV1", {}) || {}),
+      ...(data.settings || {})
+    };
+
+    const spendingSettings = data.spendingSettings || {};
     const currentMonth = monthKey();
 
-    const portfolioValue = getPortfolioValue(data.portfolio);
-    const portfolioCost = getPortfolioCost(data.portfolio);
+    const portfolioList = normalizePortfolio(data.portfolio, data);
+    const portfolioValue = getPortfolioValue(portfolioList);
+    const portfolioCost = getPortfolioCost(portfolioList);
     const portfolioProfit = portfolioValue - portfolioCost;
     const portfolioReturn = portfolioCost > 0 ? (portfolioProfit / portfolioCost) * 100 : 0;
 
-    const assetsValue = sum(data.assets, x =>
-      x.value ?? x.amount ?? x.currentValue ?? 0
-    );
+    const assetsValue = Array.isArray(data.assets)
+      ? sum(data.assets, x => x.value ?? x.amount ?? x.currentValue ?? 0)
+      : objectValuesSum(data.assets, ["cash", "emergency", "emergencyCash", "investments"]);
 
-    const liabilitiesValue = sum(data.liabilities, x =>
-      x.balance ?? x.remaining ?? x.amount ?? x.value ?? 0
-    );
+    const liabilitiesValue = Array.isArray(data.liabilities)
+      ? sum(data.liabilities, x => x.balance ?? x.remaining ?? x.amount ?? x.value ?? 0)
+      : n(data.liabilities?.total ?? 0) || objectValuesSum(data.liabilities, ["items"]);
 
-    const dividendsValue = sum(data.dividends, x =>
-      x.amount ?? x.value ?? 0
-    );
+    const dividendsValue = Array.isArray(data.dividends)
+      ? sum(data.dividends, x => x.amount ?? x.value ?? 0)
+      : objectValuesSum(data.dividends);
 
     const emergencyCash = n(
       settings.emergencyFundCurrent ??
       settings.emergencyCash ??
       settings.emergency ??
+      data.assets?.emergencyCash ??
+      data.assets?.emergency ??
       0
     );
 
@@ -147,6 +230,7 @@
       settings.availableCash ??
       settings.cashBalance ??
       settings.bankCash ??
+      data.assets?.cash ??
       0
     );
 
@@ -158,12 +242,13 @@
     );
 
     const monthlyBudget = n(
-      data.spendingSettings.monthlyBudget ??
+      spendingSettings.monthlyBudget ??
       settings.monthlyBudget ??
       7000
     );
 
-    const monthExpenses = data.expenses.filter(x => monthKey(x.date) === currentMonth);
+    const expenses = toArray(data.expenses || data.spending || data.transactions);
+    const monthExpenses = expenses.filter(x => monthKey(x.date) === currentMonth);
     const monthlySpent = sum(monthExpenses, x => x.amount ?? x.value ?? 0);
     const spendingRemaining = monthlyBudget - monthlySpent;
     const spendingPercent = pct(monthlySpent, monthlyBudget);
@@ -177,10 +262,20 @@
 
     const netWorth = totalAssets - liabilitiesValue;
 
-    const targetNetWorth = n(settings.targetNetWorth, 1000000);
+    const targetNetWorth = n(
+      settings.targetNetWorth ??
+      data.goals?.targetNetWorth ??
+      1000000
+    );
+
     const goalProgress = pct(netWorth, targetNetWorth);
 
-    const monthlyInvestment = n(settings.monthlyInvestment, 0);
+    const monthlyInvestment = n(
+      settings.monthlyInvestment ??
+      data.portfolio?.monthlyInvestment ??
+      0
+    );
+
     const monthlySalary = n(settings.monthlySalary, 32000);
     const investRate = monthlySalary > 0 ? (monthlyInvestment / monthlySalary) * 100 : 0;
 
@@ -215,16 +310,16 @@
       return ["تنبيه مهم", "صافي الثروة بالسالب. الأولوية الآن تخفيف الالتزامات.", "danger", "⚠️"];
     }
 
+    if (c.portfolioValue <= 0) {
+      return ["اربط المحفظة", "بيانات المحفظة غير ظاهرة في الرئيسية. حدّث المحفظة أو تأكد من الحفظ.", "warning", "📈"];
+    }
+
     if (c.spendingPercent >= 100) {
       return ["وقف المصروف الزائد", `تجاوزت ميزانية الشهر بـ ${money(c.monthlySpent - c.monthlyBudget)}.`, "danger", "🚨"];
     }
 
     if (c.emergencyPercent < 30) {
       return ["قوّي صندوق الطوارئ", `ناقصك ${money(Math.max(c.emergencyTarget - c.emergencyCash, 0))} للوصول للهدف.`, "warning", "🛟"];
-    }
-
-    if (c.portfolioValue <= 0) {
-      return ["اربط المحفظة", "بيانات المحفظة غير ظاهرة في الرئيسية. حدّث المحفظة أو تأكد من الحفظ.", "warning", "📈"];
     }
 
     return ["مسارك المالي جيد", "استمر بالتحديث، راقب المصروف، وثبّت الاستثمار الشهري.", "good", "✅"];
@@ -292,13 +387,11 @@
       .formulaItem{padding:13px;border-radius:18px;background:#f8fafc;border:1px solid #eef2f7}
       .formulaItem small{display:block;color:#7b8494;font-size:12px;font-weight:850}
       .formulaItem strong{display:block;direction:ltr;text-align:right;margin-top:5px;font-size:16px;color:#071022;font-weight:950}
+      .formulaItem .neg{color:#b91c1c}
       .homeInsights{margin-top:16px;padding:20px 18px;border-radius:28px;background:#fff;border:1px solid rgba(226,232,240,.85);box-shadow:0 16px 34px rgba(15,23,42,.07)}
       .homeInsights h3{margin:0 0 12px;color:#071022;font-size:21px;font-weight:950}
       .insight{padding:13px 14px;border-radius:18px;background:#f8fafc;border:1px solid #eef2f7;color:#111827;font-size:13.5px;line-height:1.7;font-weight:850}
       .insight+.insight{margin-top:9px}
-      .homeActions{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-      .homeActionBtn{border:0;border-radius:22px;padding:15px 12px;background:#071022;color:#fff;font-size:14px;font-weight:950;box-shadow:0 14px 28px rgba(7,16,34,.16)}
-      .homeActionBtn.light{background:#fff;color:#071022;border:1px solid rgba(226,232,240,.9)}
       @media(max-width:390px){
         #home{padding-left:12px;padding-right:12px}
         .homeTitle h1{font-size:25px}
@@ -312,39 +405,10 @@
     document.head.appendChild(style);
   }
 
-  function go(id) {
-    if (typeof window.pg === "function") {
-      window.pg(id);
-      return;
-    }
-
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("on"));
-    const target = document.getElementById(id);
-    if (target) target.classList.add("on");
-
-    document.querySelectorAll(".tab,.navItem,.bottomNav button").forEach(b => {
-      b.classList.remove("on", "active");
-      const txt = b.textContent || "";
-      if (
-        (id === "home" && txt.includes("الرئيسية")) ||
-        (id === "portfolio" && txt.includes("المحفظة")) ||
-        (id === "spending" && txt.includes("المصروفات")) ||
-        (id === "assets" && txt.includes("الثروة")) ||
-        (id === "reports" && txt.includes("التحليل")) ||
-        (id === "settings" && txt.includes("الإعدادات"))
-      ) {
-        b.classList.add("on", "active");
-      }
-    });
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   function render() {
     injectStyle();
 
-    const data = getData();
-    const c = calc(data);
+    const c = calc();
     const [dTitle, dText, dType, dIcon] = decision(c);
     const insights = insightList(c);
 
@@ -484,40 +548,39 @@
         <h3>تنبيهات ذكية</h3>
         ${insights.map(x => `<div class="insight">🔔 ${x}</div>`).join("")}
       </section>
-
-      <section class="homeActions">
-        <button class="homeActionBtn" data-go="portfolio">تحديث المحفظة</button>
-        <button class="homeActionBtn light" data-go="spending">إضافة مصروف</button>
-        <button class="homeActionBtn light" data-go="assets">تحديث الثروة</button>
-        <button class="homeActionBtn light" data-go="reports">عرض التحليل</button>
-      </section>
     `;
-
-    page.querySelectorAll("[data-go]").forEach(btn => {
-      btn.addEventListener("click", () => go(btn.dataset.go));
-    });
   }
 
   function bind() {
+    const events = [
+      "pwc:dataChanged",
+      "pwc:portfolioChanged",
+      "pwc:dataUpdated",
+      "pwc:portfolioUpdated",
+      "pwc:assetsUpdated",
+      "pwc:liabilitiesUpdated",
+      "pwc:settingsUpdated",
+      "dataChanged",
+      "portfolioChanged",
+      "assetsChanged",
+      "liabilitiesChanged",
+      "settingsChanged"
+    ];
+
+    events.forEach(ev => {
+      window.addEventListener(ev, render);
+      document.addEventListener(ev, render);
+    });
+
     if (window.WCEvents && typeof WCEvents.on === "function") {
-      [
-        "dataChanged",
-        "portfolioChanged",
-        "spendingChanged",
-        "assetsChanged",
-        "liabilitiesChanged",
-        "settingsChanged",
-        "wealthChanged"
-      ].forEach(ev => WCEvents.on(ev, render));
+      events.forEach(ev => WCEvents.on(ev, render));
+    }
+
+    if (window.PWCEvents && typeof PWCEvents.on === "function") {
+      events.forEach(ev => PWCEvents.on(ev, render));
     }
 
     window.addEventListener("storage", render);
-
-    document.addEventListener("pwc:dataChanged", render);
-    document.addEventListener("pwc:portfolioChanged", render);
-    document.addEventListener("pwc:spendingChanged", render);
-    document.addEventListener("pwc:assetsChanged", render);
-    document.addEventListener("pwc:settingsChanged", render);
 
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) render();
@@ -526,4 +589,10 @@
 
   bind();
   render();
+
+  window.PWCHome = {
+    version: VERSION,
+    render,
+    calc
+  };
 })();
